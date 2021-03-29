@@ -53,6 +53,7 @@ int TabelaSimbolos::inserir(string lex, int token){
     Simbolo s = {lex, token};
     int pos = hash(lex);
     tabela[pos].push_back(s);
+	return pos;
 }
 
 int TabelaSimbolos::pesquisar(string lex){
@@ -85,17 +86,57 @@ int TabelaSimbolos::hash(string lex){
     for(int i = 0; i < lex.size(); i++){
         soma += (int)lex[i];
     }
-
     //Fazer o mod num_posicoes para achar a posicao
     pos = soma % num_posicoes;
     return pos;
 }
 
-int main(){
-    TabelaSimbolos t(10);
-    t.inserir("abc", TOKEN_ID);
-    int a = t.pesquisar("abc");
-    cout << a << endl;
+void analisadorLexico() {
 
+}
+
+int main(){
+
+/*  // Testes da Tabela se Simbolos
+    TabelaSimbolos t(10);
+    t.inserir("a", TOKEN_ID);
+    t.inserir("b", TOKEN_ID);
+    t.inserir("c", TOKEN_ID);
+    t.inserir("d", TOKEN_ID);
+    t.inserir("e", TOKEN_ID);
+    t.inserir("f", TOKEN_ID);
+    t.inserir("g", TOKEN_ID);
+    t.inserir("h", TOKEN_ID);
+    t.inserir("i", TOKEN_ID);
+    t.inserir("j", TOKEN_ID);
+    t.inserir("k", TOKEN_ID);
+    t.inserir("l", TOKEN_ID);
+    int a = t.pesquisar("a");
+    cout << a << endl;
+    a = t.pesquisar("b");
+    cout << a << endl;
+    a = t.pesquisar("c");
+    cout << a << endl;
+    a = t.pesquisar("d");
+    cout << a << endl;
+    a = t.pesquisar("e");
+    cout << a << endl;
+    a = t.pesquisar("f");
+    cout << a << endl;
+    a = t.pesquisar("g");
+    cout << a << endl;
+    a = t.pesquisar("h");
+    cout << a << endl;
+    a = t.pesquisar("i");
+    cout << a << endl;
+    a = t.pesquisar("j");
+    cout << a << endl;
+    a = t.pesquisar("k");
+    cout << a << endl;
+    a = t.pesquisar("l");
+    cout << a << endl;
+	a = t.pesquisar("m");
+    cout << a << endl;
+*/	
     return 0;
 }
