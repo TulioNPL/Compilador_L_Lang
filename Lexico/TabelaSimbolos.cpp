@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include <string>
 
 using namespace std;
 
@@ -92,11 +93,99 @@ int TabelaSimbolos::hash(string lex){
 }
 
 void analisadorLexico() {
+	char c;
+	int S = 0;
+	c = cin.get();
+	while(c != EOF) {
+		//Automato usando switchi
+		cout << c;
+		switch(S) {
+			case 0: 
+				if(c == ' ' || c == '\n') S = 0;
+				else if(c == '_') S = 2;
+				else if(c == '\'') S = 4;
+				else if(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') S = 3; 
+				else if(c >= '1' && c <= '9') S = 11;
+				else if(c == '0') S = 6;
+				else if(c == '=' || c == '+' || c == '*' || c == '['
+						|| c == ']' || c == '(' || c == ')' || c == '{' 
+						|| c == '}' || c == '.' || c == ';' || c == ','
+						|| c == '%') S = 1;
+				else if(c == ':') S = 12;
+				else if(c == '<') S = 13; 
+				else if(c == '>') S = 14;
+				else if(c == '\"') S = 15;
+				else if(c == '/') S = 17;
 
+				cout << " Case: " << S << endl; 
+				break;
+
+			case 1:
+				S = 0; 
+				break;
+			case 2: 
+				S = 0; 
+				break;
+			case 3: 
+				S = 0; 
+				break;
+			case 4: 
+				S = 0; 
+				break;
+			case 5: 
+				S = 0; 
+				break;
+			case 6: 
+				S = 0; 
+				break;
+			case 7: 
+				S = 0; 
+				break;
+			case 8: 
+				S = 0; 
+				break;
+			case 9: 
+				S = 0; 
+				break;
+			case 10: 
+				S = 0; 
+				break;
+			case 11: 
+				S = 0; 
+				break;
+			case 12: 
+				S = 0; 
+				break;
+			case 13: 
+				S = 0; 
+				break;
+			case 14: 
+				S = 0; 
+				break;
+			case 15: 
+				S = 0; 
+				break;
+			case 16: 
+				S = 0; 
+				break;
+			case 17: 
+				S = 0; 
+				break;
+			case 18: 
+				S = 0; 
+				break;
+			case 19:  
+				S = 0; 
+				break;
+
+		}
+		c = cin.get();
+	}
 }
 
 int main(){
 
+analisadorLexico();
 /*  // Testes da Tabela se Simbolos
     TabelaSimbolos t(10);
     t.inserir("a", TOKEN_ID);
