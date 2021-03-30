@@ -8,7 +8,7 @@ Trabalho de compiladores
 
 [X] 1.3 Testar a Tabela de Símbolos.
 
-[ ] 1.4 Implementar o analisador léxico.
+[X] 1.4 Implementar o analisador léxico.
 
 ## Parte 2
 [X] 2.1 Escrever uma gramática LL(1) com E.R.
