@@ -1,1 +1,8 @@
-__void_0xD abababa void;
+__void_0xD
+abababa
+"carai mano"
+'v'
+0DAh
+/* xd man */
+void main;
+a >= b;

@@ -115,6 +115,7 @@ string analisadorLexico() {
         // Automato usando switch
         switch (S) {
             case 0:
+                lex = "";
                 if (c == ' ' || c == '\n') {
                     S = 0;
                 } else if (c == '_') {
@@ -183,52 +184,139 @@ string analisadorLexico() {
                 }
                 break;
             case 4:
-                S = 0;
+                if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'){
+                    lex+=c;
+                    S = 5;
+                }
                 break;
             case 5:
-                S = 0;
+                if (c == '\'') {
+                    lex+=c;
+                    S = 1;
+                }
                 break;
             case 6:
-                S = 0;
+                if(c >= 0 && c <= 9){
+                    lex+=c;
+                    S=9;
+                } else if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')){
+                    lex+=c;
+                    S=7;
+                } else {
+                    S=1;
+                    cin.unget();
+                }
                 break;
             case 7:
-                S = 0;
+                if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')){
+                    lex+=c;
+                    S=8;
+                }
                 break;
             case 8:
-                S = 0;
+                if(c == 'h'){
+                    S=1;
+                    lex+=c;
+                }
                 break;
             case 9:
-                S = 0;
+                if(c >= 0 && c <= 9){
+                    lex+=c;
+                    S=10;
+                } else if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')){
+                    lex+=c;
+                    S=8;
+                } else {
+                    S=1;
+                    cin.unget();
+                }
                 break;
             case 10:
-                S = 0;
+                if(c == 'h'){
+                    lex+=c;
+                    S = 1;
+                } else if (c >= 0 && c <= 9) {
+                    lex+=c;
+                    S=11;
+                } else {
+                    S = 1;
+                    cin.unget();
+                }
                 break;
             case 11:
-                S = 0;
+                if (c >= 0 && c <= 9){
+                    lex+=c;
+                    S=11;
+                } else {
+                    S=1;
+                    cin.unget();
+                }
                 break;
             case 12:
-                S = 0;
+                if(c == '='){
+                    lex+=c;
+                    S=1;
+                }
                 break;
             case 13:
-                S = 0;
+                if(c == '>' || c == '='){
+                    lex+=c;
+                    S=1;
+                } else {
+                    S=1;
+                    cin.unget();
+                }
                 break;
             case 14:
-                S = 0;
+                if(c=='='){
+                    lex+=c;
+                    S=1;
+                } else {
+                    S=1;
+                    cin.unget();
+                }
                 break;
             case 15:
-                S = 0;
+                if(c != '\"' && c != '$' && c != '\n'){
+                    lex+=c;
+                    S=16;
+                }
                 break;
             case 16:
-                S = 0;
+                if(c != '\"' && c != '$' && c != '\n'){
+                    lex+=c;
+                    S=16;
+                } else if (c == '\"'){
+                    lex+=c;
+                    S=1;
+                }
                 break;
             case 17:
-                S = 0;
+                if(c=='*'){
+                    lex+=c;
+                    S=18;
+                }
                 break;
             case 18:
-                S = 0;
+                if(c != '*'){
+                    lex+=c;
+                    S=18;
+                } else {
+                    lex+=c;
+                    S=19;
+                }
                 break;
             case 19:
-                S = 0;
+                if(c == '*'){
+                    lex+=c;
+                    S=19;
+                } else if (c == '/'){
+                    lex+=c;
+                    S=0;
+                } else if (c != '*' && c != '/') {
+                    lex+=c;
+                    S=18;
+                }
                 break;
         }
         cout << c << " → " << S << endl;
