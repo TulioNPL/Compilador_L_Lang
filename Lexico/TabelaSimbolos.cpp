@@ -108,6 +108,8 @@ string analisadorLexico() {
             // Senao = EOF
         } else {
             c = EOF;
+            lex = EOF;
+            return "EOF";
         }
 
         // Automato usando switch
@@ -115,7 +117,6 @@ string analisadorLexico() {
             case 0:
                 if (c == ' ' || c == '\n') {
                     S = 0;
-                    lex += c;
                 } else if (c == '_') {
                     S = 2;
                     lex += c;
@@ -239,11 +240,9 @@ string analisadorLexico() {
 
 int main() {
     string token = "";
-    int a = 0;
-    while (a < 2) {
+    while (token != "EOF") {
         token = analisadorLexico();
         cout << "token " << token << " identificado" << endl;
-        a++;
         // analise sintatica...
     }
 
