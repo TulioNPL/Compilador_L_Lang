@@ -57,6 +57,9 @@ struct RegLex {
     string tipo;
 }; // registro léxico
 
+// iniciando o registro lexico variável global
+RegLex reg;
+
 class TabelaSimbolos {
     int num_posicoes;
 
@@ -67,12 +70,22 @@ class TabelaSimbolos {
     int inserir(string lex, int token);
     int pesquisar(string lex);
     int hash(string lex);
+    int getToken(string lex, int pos);
     void mostrar();
 };
 
 TabelaSimbolos::TabelaSimbolos(int n) {
     this->num_posicoes = n;
     tabela = new list<Simbolo>[num_posicoes];
+}
+
+int TabelaSimbolos::getToken(string lex, int pos){
+    list<Simbolo>::iterator i;
+    for(i = tabela[pos].begin(); i != tabela[pos].end(); i++){
+        if(!lex.compare(i->lexema)){
+            return i->token;
+        }
+    }
 }
 
 void TabelaSimbolos::mostrar(){
@@ -101,6 +114,7 @@ int TabelaSimbolos::pesquisar(string lex) {
     int pos_inicial = hash(lex);
 
     // Verifica se a lista da posição encontrada é vazia
+    // cout << "pos_inicial: " << pos_inicial << endl;
     if (tabela[pos_inicial].size() != 0) {
         // Pesquisa o lexema na tabela de simbolos
         list<Simbolo>::iterator i;
@@ -118,12 +132,12 @@ int TabelaSimbolos::pesquisar(string lex) {
 }
 
 int TabelaSimbolos::hash(string lex) {
-    int soma;
+    int soma = 0;
     int pos;
 
     // Converter cada char pra int e somar
     for (int i = 0; i < lex.size(); i++) {
-        soma += (int)lex[i];
+        soma += ((int)lex[i] * (i+1));
     }
     // Fazer o mod num_posicoes para achar a posicao
     pos = soma % num_posicoes;
@@ -132,7 +146,7 @@ int TabelaSimbolos::hash(string lex) {
 
 
 // inicializar tabela de simbolos (para ser variável global)
-TabelaSimbolos t(100);
+TabelaSimbolos t(127);
 
 string analisadorLexico() {
     char c;
@@ -144,13 +158,9 @@ string analisadorLexico() {
 
         falta:  elses (erros lexicos e EOF)
                 demais tokens
-                registro lexico
     
     
     */
-
-    // iniciando o registro lexico
-    RegLex reg;
 
     // criando variaveis para criação do reglex e do token
     string lex = "";
@@ -246,10 +256,15 @@ string analisadorLexico() {
                     */
                     pos = t.pesquisar(lex);
                     if(pos != -1){
-                        // colocar o touken aqui
+                        cout << "já encontrou!" << endl;
+                        reg.posicao = pos;
+                        reg.token = t.getToken(lex, pos);
+                        reg.lexema = lex;
                     } else{
-                        t.inserir(lex, tok);
-                        t.mostrar();
+                        pos = t.inserir(lex, tok);
+                        reg.token = tok;
+                        reg.posicao = pos;
+                        reg.lexema = lex;
                     }
 
 
@@ -444,8 +459,12 @@ int main() {
     while (token != "EOF") {
         token = analisadorLexico();
         cout << "token " << token << " identificado" << endl;
+        cout << endl << "-- registro lexico atual --" << endl;
+        cout << "token → " << reg.token << ", lexema →" << reg.lexema << ", posição →" << reg.posicao << endl;
+
         // analise sintatica...
     }
+    t.mostrar();
 
     /*  // Testes da Tabela se Simbolos
     TabelaSimbolos t(10);
