@@ -7,7 +7,7 @@ using namespace std;
 #define TOKEN_ID 1
 #define TOKEN_CONST 2
 #define TOKEN_IGUAL 3
-#define TOKEN_2_PTS_IGUAL 4
+#define TOKEN_ATRIB 4
 #define TOKEN_ABRE_PAREN 5
 #define TOKEN_FECHA_PAREN 6
 #define TOKEN_MENOR 7
@@ -26,13 +26,36 @@ using namespace std;
 #define TOKEN_MOD 20
 #define TOKEN_ABRE_COLCH 21
 #define TOKEN_FECHA_COLCH 22
+#define TOKEN_EOF 23
+#define TOKEN_FINAL 24
+#define TOKEN_INT 25
+#define TOKEN_CHAR 26
+#define TOKEN_FOR 27
+#define TOKEN_IF 28
+#define TOKEN_TRUE 29
+#define TOKEN_ELSE 30
+#define TOKEN_AND 31
+#define TOKEN_OR 32
+#define TOKEN_NOT 33
+#define TOKEN_THEN 34
+#define TOKEN_READLN 35
+#define TOKEN_FALSE 36
+#define TOKEN_WRITE 37
+#define TOKEN_WRITELN 38
+#define TOKEN_MAIN 39
 
-// Definir valores pro restante dos tokens e pros tipos das variaveis
 
 struct Simbolo {
     string lexema;
     int token;  // Short provisorio
 };
+
+struct RegLex {
+    string lexema;
+    int token;
+    int posicao;
+    string tipo;
+}; // registro léxico
 
 class TabelaSimbolos {
     int num_posicoes;
@@ -44,11 +67,25 @@ class TabelaSimbolos {
     int inserir(string lex, int token);
     int pesquisar(string lex);
     int hash(string lex);
+    void mostrar();
 };
 
 TabelaSimbolos::TabelaSimbolos(int n) {
     this->num_posicoes = n;
     tabela = new list<Simbolo>[num_posicoes];
+}
+
+void TabelaSimbolos::mostrar(){
+    for (int i = 0; i < num_posicoes; i++) {
+        cout << i;
+        list<Simbolo>::iterator x;
+        for (x = tabela[i].begin(); x != tabela[i].end();
+             x++){ 
+
+            cout << " --> " << x->lexema << " " << x->token;
+        }
+        cout << endl;
+    }
 }
 
 int TabelaSimbolos::inserir(string lex, int token) {
@@ -93,10 +130,34 @@ int TabelaSimbolos::hash(string lex) {
     return pos;
 }
 
+
+// inicializar tabela de simbolos (para ser variável global)
+TabelaSimbolos t(100);
+
 string analisadorLexico() {
     char c;
     int S = 0;
+
+    /* 
+        feito:  cases
+                inserção de token ID
+
+        falta:  elses (erros lexicos e EOF)
+                demais tokens
+                registro lexico
+    
+    
+    */
+
+    // iniciando o registro lexico
+    RegLex reg;
+
+    // criando variaveis para criação do reglex e do token
     string lex = "";
+    string tipo = "";
+    int tok = 0;
+    int pos = -1;
+
     while (S != 1) {
         if (c != EOF) {
             c = cin.get();
@@ -107,8 +168,6 @@ string analisadorLexico() {
             // }
             // Senao = EOF
         } else {
-            c = EOF;
-            lex = EOF;
             return "EOF";
         }
 
@@ -119,12 +178,14 @@ string analisadorLexico() {
                 if (c == ' ' || c == '\n') {
                     S = 0;
                 } else if (c == '_') {
+                    tok = TOKEN_ID;
                     S = 2;
                     lex += c;
                 } else if (c == '\'') {
                     S = 4;
                     lex += c;
                 } else if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+                    tok = TOKEN_ID;
                     S = 3;
                     lex += c;
                 } else if (c >= '1' && c <= '9') {
@@ -178,7 +239,20 @@ string analisadorLexico() {
                     S = 3;
                     lex += c;
                 } else {
-                    // aceita token seria aqui
+                    /* 
+                        busca pelo token,
+                        se não achar, insere
+                        se achar, retorna a sua posição
+                    */
+                    pos = t.pesquisar(lex);
+                    if(pos != -1){
+                        // colocar o touken aqui
+                    } else{
+                        t.inserir(lex, tok);
+                        t.mostrar();
+                    }
+
+
                     S = 1;
                     cin.unget();
                 }
@@ -327,6 +401,45 @@ string analisadorLexico() {
 }
 
 int main() {
+    // iniciando tabela de simbolos
+    t.inserir("final", TOKEN_FINAL);
+    t.inserir("int", TOKEN_INT);
+    t.inserir("char", TOKEN_CHAR);
+    t.inserir("for", TOKEN_FOR);
+    t.inserir("if", TOKEN_IF);
+    t.inserir("TRUE", TOKEN_TRUE);
+    t.inserir("else", TOKEN_ELSE);
+    t.inserir("and", TOKEN_AND);
+    t.inserir("or", TOKEN_OR);
+    t.inserir("not", TOKEN_NOT);
+    t.inserir(":=", TOKEN_ATRIB);
+    t.inserir("=", TOKEN_IGUAL);
+    t.inserir("(", TOKEN_ABRE_PAREN);
+    t.inserir(")", TOKEN_FECHA_PAREN);
+    t.inserir("<", TOKEN_MENOR);
+    t.inserir(">", TOKEN_MAIOR);
+    t.inserir("<>", TOKEN_DIF);
+    t.inserir(">=", TOKEN_MAIOR_IGUAL);
+    t.inserir("<=", TOKEN_MENOR_IGUAL);
+    t.inserir(",", TOKEN_VIRG);
+    t.inserir("+", TOKEN_MAIS);
+    t.inserir("-", TOKEN_MENOS);
+    t.inserir("*", TOKEN_ASTER);
+    t.inserir("/", TOKEN_BARRA);
+    t.inserir(";", TOKEN_PONTO_VIRG);
+    t.inserir("{", TOKEN_ABRE_CHAVE);
+    t.inserir("}", TOKEN_FECHA_CHAVE);
+    t.inserir("then", TOKEN_THEN);
+    t.inserir("readln", TOKEN_READLN);
+    t.inserir("FALSE", TOKEN_FALSE);
+    t.inserir("write", TOKEN_WRITE);
+    t.inserir("writeln", TOKEN_WRITELN);
+    t.inserir("%", TOKEN_MOD);
+    t.inserir("[", TOKEN_ABRE_COLCH);
+    t.inserir("]", TOKEN_FECHA_COLCH);
+    t.inserir("main", TOKEN_MAIN);
+    t.inserir("EOF", TOKEN_EOF); // CONSERTAR !!!!!
+
     string token = "";
     while (token != "EOF") {
         token = analisadorLexico();
