@@ -44,10 +44,9 @@ using namespace std;
 #define TOKEN_WRITELN 38
 #define TOKEN_MAIN 39
 
-
 struct Simbolo {
     string lexema;
-    int token;  // Short provisorio
+    int token;
 };
 
 struct RegLex {
@@ -55,7 +54,7 @@ struct RegLex {
     int token;
     int posicao;
     string tipo;
-}; // registro léxico
+};  // registro léxico
 
 // iniciando o registro lexico variável global
 RegLex reg;
@@ -79,22 +78,20 @@ TabelaSimbolos::TabelaSimbolos(int n) {
     tabela = new list<Simbolo>[num_posicoes];
 }
 
-int TabelaSimbolos::getToken(string lex, int pos){
+int TabelaSimbolos::getToken(string lex, int pos) {
     list<Simbolo>::iterator i;
-    for(i = tabela[pos].begin(); i != tabela[pos].end(); i++){
-        if(!lex.compare(i->lexema)){
+    for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
+        if (!lex.compare(i->lexema)) {
             return i->token;
         }
     }
 }
 
-void TabelaSimbolos::mostrar(){
+void TabelaSimbolos::mostrar() {
     for (int i = 0; i < num_posicoes; i++) {
         cout << i;
         list<Simbolo>::iterator x;
-        for (x = tabela[i].begin(); x != tabela[i].end();
-             x++){ 
-
+        for (x = tabela[i].begin(); x != tabela[i].end(); x++) {
             cout << " --> " << x->lexema << " " << x->token;
         }
         cout << endl;
@@ -137,29 +134,61 @@ int TabelaSimbolos::hash(string lex) {
 
     // Converter cada char pra int e somar
     for (int i = 0; i < lex.size(); i++) {
-        soma += ((int)lex[i] * (i+1));
+        soma += ((int)lex[i] * (i + 1));
     }
     // Fazer o mod num_posicoes para achar a posicao
     pos = soma % num_posicoes;
     return pos;
 }
 
-
 // inicializar tabela de simbolos (para ser variável global)
 TabelaSimbolos t(127);
 
+//metodo para inserir token
+void atualizarTabela(string lex, string tipo, int token){
+    if(token == TOKEN_CONST){
+        // CONST NAO ENTRA NA TABELA
+        reg.lexema = lex;
+        reg.tipo = tipo;
+        reg.token = token;
+    } else {
+        /*
+            busca pelo token,
+            se não achar, insere
+            se achar, retorna a sua posição
+        */
+        int pos = t.pesquisar(lex);
+        if (pos != -1) {
+            cout << "já encontrou!" << endl;
+            reg.posicao = pos;
+            reg.token = t.getToken(lex, pos);
+            reg.lexema = lex;
+        } else {
+            pos = t.inserir(lex, token);
+            reg.token = token;
+            reg.posicao = pos;
+            reg.lexema = lex;
+        }
+    }
+}
+
 string analisadorLexico() {
+    reg.lexema = "";
+    reg.posicao = -1;
+    reg.tipo = "";
+    reg.token = 0;
+
     char c;
     int S = 0;
 
-    /* 
+    /*
         feito:  cases
                 inserção de token ID
 
         falta:  elses (erros lexicos e EOF)
                 demais tokens
-    
-    
+
+
     */
 
     // criando variaveis para criação do reglex e do token
@@ -168,7 +197,10 @@ string analisadorLexico() {
     int tok = 0;
     int pos = -1;
 
+    // limpa o registro léxico
+
     while (S != 1) {
+        cout << "caractere atual: " << (int)c << endl;
         if (c != EOF) {
             c = cin.get();
             // if(c == ""){
@@ -192,6 +224,8 @@ string analisadorLexico() {
                     S = 2;
                     lex += c;
                 } else if (c == '\'') {
+                    tok = TOKEN_CONST;
+                    tipo = "char";
                     S = 4;
                     lex += c;
                 } else if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
@@ -199,17 +233,21 @@ string analisadorLexico() {
                     S = 3;
                     lex += c;
                 } else if (c >= '1' && c <= '9') {
+                    tok = TOKEN_CONST;
+                    tipo = "int";
                     S = 11;
                     lex += c;
                 } else if (c == '0') {
-                    S = 6;
+                    tok = TOKEN_CONST;
                     lex += c;
+                    S = 6;
                 } else if (c == '=' || c == '+' || c == '*' || c == '[' ||
                            c == ']' || c == '(' || c == ')' || c == '{' ||
                            c == '}' || c == '.' || c == ';' || c == ',' ||
                            c == '%') {
-                    S = 1;
                     lex += c;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                 } else if (c == ':') {
                     S = 12;
                     lex += c;
@@ -220,6 +258,8 @@ string analisadorLexico() {
                     S = 14;
                     lex += c;
                 } else if (c == '\"') {
+                    tok = TOKEN_CONST;
+                    tipo = "string";
                     S = 15;
                     lex += c;
                 } else if (c == '/') {
@@ -249,162 +289,163 @@ string analisadorLexico() {
                     S = 3;
                     lex += c;
                 } else {
-                    /* 
-                        busca pelo token,
-                        se não achar, insere
-                        se achar, retorna a sua posição
-                    */
-                    pos = t.pesquisar(lex);
-                    if(pos != -1){
-                        cout << "já encontrou!" << endl;
-                        reg.posicao = pos;
-                        reg.token = t.getToken(lex, pos);
-                        reg.lexema = lex;
-                    } else{
-                        pos = t.inserir(lex, tok);
-                        reg.token = tok;
-                        reg.posicao = pos;
-                        reg.lexema = lex;
-                    }
-
-
+                    atualizarTabela(lex, tipo, tok);
                     S = 1;
                     cin.unget();
                 }
                 break;
             case 4:
-                if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'){
-                    lex+=c;
+                if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+                    lex += c;
                     S = 5;
                 }
                 break;
             case 5:
                 if (c == '\'') {
-                    lex+=c;
+                    lex += c;
+                    atualizarTabela(lex, tipo, tok);
                     S = 1;
                 }
                 break;
             case 6:
-                if(c >= 0 && c <= 9){
-                    lex+=c;
-                    S=9;
-                } else if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')){
-                    lex+=c;
-                    S=7;
+                if (c >= '0' && c <= '9') {
+                    lex += c;
+                    S = 9;
+                } else if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+                    tipo = "char";
+                    lex += c;
+                    S = 7;
                 } else {
-                    S=1;
+                    tipo = "int";
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                     cin.unget();
                 }
                 break;
             case 7:
-                if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')){
-                    lex+=c;
-                    S=8;
+                if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') ||
+                    (c >= '0' && c <= '9')) {
+                    lex += c;
+                    S = 8;
                 }
                 break;
             case 8:
-                if(c == 'h'){
-                    S=1;
-                    lex+=c;
+                if (c == 'h') {
+                    lex += c;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                 }
                 break;
             case 9:
-                if(c >= 0 && c <= 9){
-                    lex+=c;
-                    S=10;
-                } else if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')){
-                    lex+=c;
-                    S=8;
+                if (c >= '0' && c <= '9') {
+                    lex += c;
+                    S = 10;
+                } else if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+                    tipo = "char";
+                    lex += c;
+                    S = 8;
                 } else {
-                    S=1;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                     cin.unget();
                 }
                 break;
             case 10:
-                if(c == 'h'){
-                    lex+=c;
+                if (c == 'h') {
+                    tipo = "char";
+                    lex += c;
+                    atualizarTabela(lex, tipo, tok);
                     S = 1;
-                } else if (c >= 0 && c <= 9) {
-                    lex+=c;
-                    S=11;
+                } else if (c >= '0' && c <= '9') {
+                    tipo = "int";
+                    lex += c;
+                    S = 11;
                 } else {
+                    atualizarTabela(lex, tipo, tok);
                     S = 1;
                     cin.unget();
                 }
                 break;
             case 11:
-                if (c >= 0 && c <= 9){
-                    lex+=c;
-                    S=11;
+                if (c >= '0' && c <= '9') {
+                    lex += c;
+                    S = 11;
                 } else {
-                    S=1;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                     cin.unget();
                 }
                 break;
             case 12:
-                if(c == '='){
-                    lex+=c;
-                    S=1;
+                if (c == '=') {
+                    lex += c;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                 }
                 break;
             case 13:
-                if(c == '>' || c == '='){
-                    lex+=c;
-                    S=1;
+                if (c == '>' || c == '=') {
+                    lex += c;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                 } else {
-                    S=1;
+                    S = 1;
+                    atualizarTabela(lex, tipo, tok);
                     cin.unget();
                 }
                 break;
             case 14:
-                if(c=='='){
-                    lex+=c;
-                    S=1;
+                if (c == '=') {
+                    lex += c;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                 } else {
-                    S=1;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                     cin.unget();
                 }
                 break;
             case 15:
-                if(c != '\"' && c != '$' && c != '\n'){
-                    lex+=c;
-                    S=16;
+                if (c != '\"' && c != '$' && c != '\n') {
+                    lex += c;
+                    S = 16;
                 }
                 break;
             case 16:
-                if(c != '\"' && c != '$' && c != '\n'){
-                    lex+=c;
-                    S=16;
-                } else if (c == '\"'){
-                    lex+=c;
-                    S=1;
+                if (c != '\"' && c != '$' && c != '\n') {
+                    lex += c;
+                    S = 16;
+                } else if (c == '\"') {
+                    lex += c;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                 }
                 break;
             case 17:
-                if(c=='*'){
-                    lex+=c;
-                    S=18;
+                if (c == '*') {
+                    lex += c;
+                    S = 18;
                 }
                 break;
             case 18:
-                if(c != '*'){
-                    lex+=c;
-                    S=18;
+                if (c != '*') {
+                    lex += c;
+                    S = 18;
                 } else {
-                    lex+=c;
-                    S=19;
+                    lex += c;
+                    S = 19;
                 }
                 break;
             case 19:
-                if(c == '*'){
-                    lex+=c;
-                    S=19;
-                } else if (c == '/'){
-                    lex+=c;
-                    S=0;
+                if (c == '*') {
+                    lex += c;
+                    S = 19;
+                } else if (c == '/') {
+                    lex += c;
+                    S = 0;
                 } else if (c != '*' && c != '/') {
-                    lex+=c;
-                    S=18;
+                    lex += c;
+                    S = 18;
                 }
                 break;
         }
@@ -453,59 +494,18 @@ int main() {
     t.inserir("[", TOKEN_ABRE_COLCH);
     t.inserir("]", TOKEN_FECHA_COLCH);
     t.inserir("main", TOKEN_MAIN);
-    t.inserir("EOF", TOKEN_EOF); // CONSERTAR !!!!!
+    t.inserir("EOF", TOKEN_EOF);  // CONSERTAR !!!!!
 
     string token = "";
     while (token != "EOF") {
         token = analisadorLexico();
         cout << "token " << token << " identificado" << endl;
         cout << endl << "-- registro lexico atual --" << endl;
-        cout << "token → " << reg.token << ", lexema →" << reg.lexema << ", posição →" << reg.posicao << endl;
+        cout << "posição → " << reg.posicao << ", lexema → " << reg.lexema
+            << ", tipo → " << reg.tipo << ", token → " << reg.token << endl;
 
         // analise sintatica...
     }
     t.mostrar();
-
-    /*  // Testes da Tabela se Simbolos
-    TabelaSimbolos t(10);
-    t.inserir("a", TOKEN_ID);
-    t.inserir("b", TOKEN_ID);
-    t.inserir("c", TOKEN_ID);
-    t.inserir("d", TOKEN_ID);
-    t.inserir("e", TOKEN_ID);
-    t.inserir("f", TOKEN_ID);
-    t.inserir("g", TOKEN_ID);
-    t.inserir("h", TOKEN_ID);
-    t.inserir("i", TOKEN_ID);
-    t.inserir("j", TOKEN_ID);
-    t.inserir("k", TOKEN_ID);
-    t.inserir("l", TOKEN_ID);
-    int a = t.pesquisar("a");
-    cout << a << endl;
-    a = t.pesquisar("b");
-    cout << a << endl;
-    a = t.pesquisar("c");
-    cout << a << endl;
-    a = t.pesquisar("d");
-    cout << a << endl;
-    a = t.pesquisar("e");
-    cout << a << endl;
-    a = t.pesquisar("f");
-    cout << a << endl;
-    a = t.pesquisar("g");
-    cout << a << endl;
-    a = t.pesquisar("h");
-    cout << a << endl;
-    a = t.pesquisar("i");
-    cout << a << endl;
-    a = t.pesquisar("j");
-    cout << a << endl;
-    a = t.pesquisar("k");
-    cout << a << endl;
-    a = t.pesquisar("l");
-    cout << a << endl;
-        a = t.pesquisar("m");
-    cout << a << endl;
-*/
     return 0;
 }

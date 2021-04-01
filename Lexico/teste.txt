@@ -1,8 +1,13 @@
 __void_0xD
 abababa
-"carai mano"
 'v'
+"carai mano"
 0DAh
 /* xd man */
 void main;
 a >= b;
+a := 17;
+a < 0012;
+a > 01111155575;
+a <> 02;
+a := a * b;
