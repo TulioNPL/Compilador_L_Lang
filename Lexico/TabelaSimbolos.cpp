@@ -172,7 +172,10 @@ void atualizarTabela(string lex, string tipo, int token) {
     }
 }
 
+int linha = 1;
+
 string analisadorLexico() {
+    // limpa o registro léxico
     reg.lexema = "";
     reg.posicao = -1;
     reg.tipo = "";
@@ -197,7 +200,7 @@ string analisadorLexico() {
     int tok = 0;
     int pos = -1;
 
-    // limpa o registro léxico
+    bool sai = false;
 
     while (S != 1) {
         cout << "caractere atual: " << (int)c << endl;
@@ -217,8 +220,11 @@ string analisadorLexico() {
         switch (S) {
             case 0:
                 lex = "";
-                if (c == ' ' || c == '\n') {
+                if (c == ' ') {
                     S = 0;
+                } else if (c == '\n') {
+                    S = 0;
+                    linha++;
                 } else if (c == '_') {
                     tok = TOKEN_ID;
                     S = 2;
@@ -267,7 +273,9 @@ string analisadorLexico() {
                     S = 0;
                 } else {
                     lex += c;
-                    cout << "lexema nao identificado [" << lex << "]";
+                    cout << linha << endl
+                         << "lexema nao identificado [" << lex << "]";
+                    sai = true;
 
                     break;
                 }
@@ -288,11 +296,14 @@ string analisadorLexico() {
                     S = 3;
                     lex += c;
                 } else if (c == EOF) {
-                    cout << "fim de arquivo não esperado";
+                    cout << linha << endl << "fim de arquivo não esperado";
+                    sai = true;
                     S = 0;
                 } else {
                     lex += c;
-                    cout << "lexema nao identificado [" << lex << "]";
+                    cout << linha << endl
+                         << "lexema nao identificado [" << lex << "]";
+                    sai = true;
                 }
                 break;
             case 3:
@@ -311,11 +322,14 @@ string analisadorLexico() {
                     lex += c;
                     S = 5;
                 } else if (c == EOF) {
-                    cout << "fim de arquivo não esperado";
+                    cout << linha << endl << "fim de arquivo não esperado";
+                    sai = true;
                     S = 0;
                 } else {
                     lex += c;
-                    cout << "lexema nao identificado [" << lex << "]";
+                    cout << linha << endl
+                         << "lexema nao identificado [" << lex << "]";
+                    sai = true;
                 }
                 break;
             case 5:
@@ -323,11 +337,14 @@ string analisadorLexico() {
                     atualizarTabela(lex, tipo, tok);
                     S = 1;
                 } else if (c == EOF) {
-                    cout << "fim de arquivo não esperado";
+                    cout << linha << endl << "fim de arquivo não esperado";
+                    sai = true;
                     S = 0;
                 } else {
                     lex += c;
-                    cout << "lexema nao identificado [" << lex << "]";
+                    cout << linha << endl
+                         << "lexema nao identificado [" << lex << "]";
+                    sai = true;
                 }
                 break;
             case 6:
@@ -351,11 +368,14 @@ string analisadorLexico() {
                     lex += c;
                     S = 8;
                 } else if (c == EOF) {
-                    cout << "fim de arquivo não esperado";
+                    cout << linha << endl << "fim de arquivo não esperado";
+                    sai = true;
                     S = 0;
                 } else {
                     lex += c;
-                    cout << "lexema nao identificado [" << lex << "]";
+                    cout << linha << endl
+                         << "lexema nao identificado [" << lex << "]";
+                    sai = true;
                 }
                 break;
             case 8:
@@ -364,11 +384,14 @@ string analisadorLexico() {
                     atualizarTabela(lex, tipo, tok);
                     S = 1;
                 } else if (c == EOF) {
-                    cout << "fim de arquivo não esperado";
+                    cout << linha << endl << "fim de arquivo não esperado";
+                    sai = true;
                     S = 0;
                 } else {
                     lex += c;
-                    cout << "lexema nao identificado [" << lex << "]";
+                    cout << linha << endl
+                         << "lexema nao identificado [" << lex << "]";
+                    sai = true;
                 }
                 break;
             case 9:
@@ -417,11 +440,14 @@ string analisadorLexico() {
                     atualizarTabela(lex, tipo, tok);
                     S = 1;
                 } else if (c == EOF) {
-                    cout << "fim de arquivo não esperado";
+                    cout << linha << endl << "fim de arquivo não esperado";
+                    sai = true;
                     S = 0;
                 } else {
                     lex += c;
-                    cout << "lexema nao identificado [" << lex << "]";
+                    cout << linha << endl
+                         << "lexema nao identificado [" << lex << "]";
+                    sai = true;
                 }
                 break;
             case 13:
@@ -451,22 +477,26 @@ string analisadorLexico() {
                     lex += c;
                     S = 16;
                 } else if (c == EOF) {
-                    cout << "fim de arquivo não esperado";
+                    cout << linha << endl << "fim de arquivo não esperado";
+                    sai = true;
                     S = 0;
                 } else {
                     lex += c;
-                    cout << "lexema nao identificado [" << lex << "]";
+                    cout << linha << endl
+                         << "lexema nao identificado [" << lex << "]";
+                    sai = true;
                 }
                 break;
             case 16:
-                if (c != '\"' && c != '$' && c != '\n') {
+                if (c != '\"' && c != '$' && c != '\n' && c != EOF) {
                     lex += c;
                     S = 16;
                 } else if (c == '\"') {
                     atualizarTabela(lex, tipo, tok);
                     S = 1;
                 } else if (c == EOF) {
-                    cout << "fim de arquivo não esperado";
+                    cout << linha << endl << "fim de arquivo não esperado";
+                    sai = true;
                     S = 0;
                 }
                 break;
@@ -502,6 +532,7 @@ string analisadorLexico() {
                 break;
         }
         cout << c << " → " << S << endl;
+        if (sai) return "EOF";
     }
     cout << lex << endl;
     cout << "fim do lexema" << endl;
