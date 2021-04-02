@@ -227,7 +227,6 @@ string analisadorLexico() {
                     tok = TOKEN_CONST;
                     tipo = "char";
                     S = 4;
-                    lex += c;
                 } else if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
                     tok = TOKEN_ID;
                     S = 3;
@@ -261,7 +260,6 @@ string analisadorLexico() {
                     tok = TOKEN_CONST;
                     tipo = "string";
                     S = 15;
-                    lex += c;
                 } else if (c == '/') {
                     S = 17;
                     lex += c;
@@ -322,7 +320,6 @@ string analisadorLexico() {
                 break;
             case 5:
                 if (c == '\'') {
-                    lex += c;
                     atualizarTabela(lex, tipo, tok);
                     S = 1;
                 } else if (c == EOF) {
@@ -466,7 +463,6 @@ string analisadorLexico() {
                     lex += c;
                     S = 16;
                 } else if (c == '\"') {
-                    lex += c;
                     atualizarTabela(lex, tipo, tok);
                     S = 1;
                 } else if (c == EOF) {
