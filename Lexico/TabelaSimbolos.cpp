@@ -56,6 +56,8 @@ struct RegLex {
     string tipo;
 };  // registro léxico
 
+string alfabeto = "_.,;:(){}[]+-/%@!?><=*";
+
 // iniciando o registro lexico variável global
 RegLex reg;
 
@@ -85,6 +87,7 @@ int TabelaSimbolos::getToken(string lex, int pos) {
             return i->token;
         }
     }
+    return -1;
 }
 
 void TabelaSimbolos::mostrar() {
@@ -206,6 +209,12 @@ string analisadorLexico() {
         cout << "caractere atual: " << (int)c << endl;
         if (c != EOF) {
             c = cin.get();
+            if (!(c == ' ' || c == '\'' || c == '\"' ||
+                  alfabeto.find(c) != std::string::npos)) {
+                cout << linha << endl << "caractere inválido";
+                sai = true;
+                break;
+            }
             // if(c == ""){
             //   // ERRO
             //   break;
@@ -232,8 +241,9 @@ string analisadorLexico() {
                 } else if (c == '\'') {
                     tok = TOKEN_CONST;
                     tipo = "char";
+                    lex += c;
                     S = 4;
-                } else if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+                } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
                     tok = TOKEN_ID;
                     S = 3;
                     lex += c;
@@ -264,6 +274,7 @@ string analisadorLexico() {
                     lex += c;
                 } else if (c == '\"') {
                     tok = TOKEN_CONST;
+                    lex += c;
                     tipo = "string";
                     S = 15;
                 } else if (c == '/') {
@@ -291,8 +302,8 @@ string analisadorLexico() {
                 if (c == '_') {
                     S = 2;
                     lex += c;
-                } else if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' ||
-                           c >= '0' && c <= '9') {
+                } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                           (c >= '0' && c <= '9')) {
                     S = 3;
                     lex += c;
                 } else if (c == EOF) {
@@ -307,8 +318,8 @@ string analisadorLexico() {
                 }
                 break;
             case 3:
-                if (c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' ||
-                    c >= '0' && c <= '9') {
+                if (c == '_' || (c >= 'a' && c <= 'z') ||
+                    (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
                     S = 3;
                     lex += c;
                 } else {
@@ -318,7 +329,8 @@ string analisadorLexico() {
                 }
                 break;
             case 4:
-                if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                    (c >= '0' && c <= '9')) {
                     lex += c;
                     S = 5;
                 } else if (c == EOF) {
@@ -334,6 +346,7 @@ string analisadorLexico() {
                 break;
             case 5:
                 if (c == '\'') {
+                    lex += c;
                     atualizarTabela(lex, tipo, tok);
                     S = 1;
                 } else if (c == EOF) {
@@ -473,13 +486,17 @@ string analisadorLexico() {
                 }
                 break;
             case 15:
-                if (c != '\"' && c != '$' && c != '\n') {
+                if (c != '\"' && c != '$' && c != '\n' && c != EOF) {
                     lex += c;
-                    S = 16;
+                    S = 15;
                 } else if (c == EOF) {
                     cout << linha << endl << "fim de arquivo não esperado";
                     sai = true;
                     S = 0;
+                } else if (c == "\"") {
+                    lex += c;
+                    atualizarTabela(lex, tipo, tok);
+                    S = 1;
                 } else {
                     lex += c;
                     cout << linha << endl
@@ -487,19 +504,19 @@ string analisadorLexico() {
                     sai = true;
                 }
                 break;
-            case 16:
-                if (c != '\"' && c != '$' && c != '\n' && c != EOF) {
-                    lex += c;
-                    S = 16;
-                } else if (c == '\"') {
-                    atualizarTabela(lex, tipo, tok);
-                    S = 1;
-                } else if (c == EOF) {
-                    cout << linha << endl << "fim de arquivo não esperado";
-                    sai = true;
-                    S = 0;
-                }
-                break;
+            // case 16:
+            //     if (c != '\"' && c != '$' && c != '\n' && c != EOF) {
+            //         lex += c;
+            //         S = 16;
+            //     } else if (c == '\"') {
+            //         atualizarTabela(lex, tipo, tok);
+            //         S = 1;
+            //     } else if (c == EOF) {
+            //         cout << linha << endl << "fim de arquivo não esperado";
+            //         sai = true;
+            //         S = 0;
+            //     }
+            //     break;
             case 17:
                 if (c == '*') {
                     lex += c;
@@ -532,7 +549,7 @@ string analisadorLexico() {
                 break;
         }
         cout << c << " → " << S << endl;
-        if (sai) return "EOF";
+        if (sai) return "ERR";
     }
     cout << lex << endl;
     cout << "fim do lexema" << endl;
@@ -580,7 +597,7 @@ int main() {
     t.inserir("EOF", TOKEN_EOF);  // CONSERTAR !!!!!
 
     string token = "";
-    while (token != "EOF") {
+    while (token != "EOF" || token != "ERR") {
         token = analisadorLexico();
         cout << "token " << token << " identificado" << endl;
         cout << endl << "-- registro lexico atual --" << endl;
@@ -589,6 +606,7 @@ int main() {
 
         // analise sintatica...
     }
+    if (token == "ERR") cout << linhas << "linhas compiladas";
     t.mostrar();
     return 0;
 }
