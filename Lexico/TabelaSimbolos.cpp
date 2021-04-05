@@ -229,7 +229,7 @@ string analisadorLexico() {
         switch (S) {
             case 0:
                 lex = "";
-                if (c == ' ') {
+                if (c == ' ' || c == '\t') {
                     S = 0;
                 } else if (c == '\n') {
                     S = 0;
