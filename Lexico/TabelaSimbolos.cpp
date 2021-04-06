@@ -262,7 +262,7 @@ void analisadorLexico() {
                     tok = TOKEN_CONST;
                     lex += c;
                     S = 6;
-                } else if (c == '=' || c == '+' || c == '*' || c == '[' ||
+                } else if (c == '=' || c == '+' || c == '*' || c == '[' || c == '-' ||
                            c == ']' || c == '(' || c == ')' || c == '{' ||
                            c == '}' || c == '.' || c == ';' || c == ',' ||
                            c == '%') {
@@ -290,8 +290,8 @@ void analisadorLexico() {
                     S = 0;
                 } else {
                     lex += c;
-                    cout << S << endl;
-                    cout << (int)c << " " << c << endl;
+                    // cout << S << endl;
+                    // cout << (int)c << " " << c << endl;
                     throw lex;
                     break;
                 }
@@ -344,7 +344,7 @@ void analisadorLexico() {
                     S = 0;
                 } else {
                     lex += c;
-                    cout << S << endl;
+                    // cout << S << endl;
 
                     throw lex;
                 }
@@ -361,7 +361,7 @@ void analisadorLexico() {
                     S = 0;
                 } else {
                     lex += c;
-                    cout << S << endl;
+                    // cout << S << endl;
 
                     throw lex;
                 }
@@ -393,7 +393,7 @@ void analisadorLexico() {
                     S = 0;
                 } else {
                     lex += c;
-                    cout << S << endl;
+                    // cout << S << endl;
 
                     throw lex;
                 }
@@ -408,7 +408,7 @@ void analisadorLexico() {
                     S = 0;
                 } else {
                     lex += c;
-                    cout << S << endl;
+                    // cout << S << endl;
 
                     throw lex;
                 }
@@ -468,7 +468,7 @@ void analisadorLexico() {
                     S = 0;
                 } else {
                     lex += c;
-                    cout << S << endl;
+                    // cout << S << endl;
 
                     throw lex;
                 }
@@ -510,8 +510,8 @@ void analisadorLexico() {
                     S = 1;
                 } else {
                     lex += c;
-                    cout << S << endl;
-
+                    //cout << S << endl;
+                    
                     throw lex;
                 }
                 break;
@@ -578,12 +578,12 @@ void analisadorLexico() {
 
 void casaToken(int token_esperado) {
     if (reg.token == token_esperado) {
-        cout << "token_esperado: " << token_esperado << " token encontrado: " << reg.token << "(" << reg.lexema << ")" << endl;
-        cout << "Casa Token casou " << reg.lexema << " com TOKEN "
-             << token_esperado << endl;
+        // cout << "token_esperado: " << token_esperado << " token encontrado: " << reg.token << "(" << reg.lexema << ")" << endl;
+        // cout << "Casa Token casou " << reg.lexema << " com TOKEN "
+        //      << token_esperado << endl;
         analisadorLexico();
     } else {
-        cout << "token_esperado: " << token_esperado << endl;
+        // cout << "token_esperado: " << token_esperado << endl;
         throw ERR_TOKEN;
     }
 }
@@ -772,17 +772,13 @@ void CmdAtr(){
 
 // CmdRep -> for"(" [CmdP] {, CmdP}; Exp; [CmdP] {, CmdP} ")" (Cmd | BlocoCmd)
 void CmdRep() {
-    cout << 1 << endl;
     casaToken(TOKEN_FOR);
-    cout << 2 << endl;
     casaToken(TOKEN_ABRE_PAREN);
-    cout << 3 << endl;
     if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
        reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
        reg.token == TOKEN_WRITELN){
         CmdP();
     }
-    cout << 4 << endl;
     while(reg.token == TOKEN_VIRG){
         casaToken(TOKEN_VIRG);
         if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
@@ -791,9 +787,7 @@ void CmdRep() {
             CmdP();
         }
     }
-    cout << 5 << endl;
     casaToken(TOKEN_PONTO_VIRG);
-    cout << 6 << endl;
     Exp();
     casaToken(TOKEN_PONTO_VIRG);
     if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
