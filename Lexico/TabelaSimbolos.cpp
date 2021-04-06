@@ -45,6 +45,11 @@ using namespace std;
 #define TOKEN_MAIN 39
 #define TOKEN_BOOL 40
 
+// definição de errors
+#define ERR_CHAR -1
+#define ERR_EOF -2
+#define ERR_TOKEN -3
+
 struct Simbolo {
     string lexema;
     int token;
@@ -59,7 +64,6 @@ struct RegLex {
 };  // registro léxico
 
 string alfabeto = "_.,;:(){}[]+-/%@!?><=*";
-bool ERR = false;
 
 // iniciando o registro lexico variável global
 RegLex reg;
@@ -209,10 +213,9 @@ void analisadorLexico() {
     int pos = -1;
     size_t tamanho = 0;
 
-    bool sai = false;
-
     while (S != 1) {
         // cout << "caractere atual: " << (int)c << endl;
+
         if (c != EOF) {
             c = cin.get();
             if (!(c == ' ' || c == '\n' || c == '\r' || c == '\t' ||
@@ -220,8 +223,7 @@ void analisadorLexico() {
                   (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
                   (c >= '0' && c <= '9') ||
                   alfabeto.find(c) != std::string::npos)) {
-                cout << linha << endl << "caractere invalido.";
-                ERR = true;
+                throw ERR_CHAR;
                 break;
             }
         } else {
@@ -288,12 +290,9 @@ void analisadorLexico() {
                     S = 0;
                 } else {
                     lex += c;
-                    // cout << S << endl;
-                    // cout << (int)c << " " << c << endl;
-                    cout << linha << endl
-                         << "lexema nao identificado xd [" << lex << "]";
-                    sai = true;
-
+                    cout << S << endl;
+                    cout << (int)c << " " << c << endl;
+                    throw lex;
                     break;
                 }
                 break;
@@ -313,15 +312,14 @@ void analisadorLexico() {
                     S = 3;
                     lex += c;
                 } else if (c == EOF) {
-                    cout << linha << endl << "fim de arquivo nao esperado.";
-                    sai = true;
+                    throw ERR_EOF;
+
                     S = 0;
                 } else {
                     lex += c;
-                    // cout << S << endl;
-                    cout << linha << endl
-                         << "lexema nao identificado [" << lex << "].";
-                    sai = true;
+                    cout << S << endl;
+
+                    throw lex;
                 }
                 break;
             case 3:
@@ -341,15 +339,14 @@ void analisadorLexico() {
                     lex += c;
                     S = 5;
                 } else if (c == EOF) {
-                    cout << linha << endl << "fim de arquivo nao esperado.";
-                    sai = true;
+                    throw ERR_EOF;
+
                     S = 0;
                 } else {
                     lex += c;
-                    // cout << S << endl;
-                    cout << linha << endl
-                         << "lexema nao identificado [" << lex << "].";
-                    sai = true;
+                    cout << S << endl;
+
+                    throw lex;
                 }
                 break;
             case 5:
@@ -359,15 +356,14 @@ void analisadorLexico() {
                     atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
                 } else if (c == EOF) {
-                    cout << linha << endl << "fim de arquivo nao esperado.";
-                    sai = true;
+                    throw ERR_EOF;
+
                     S = 0;
                 } else {
                     lex += c;
-                    // cout << S << endl;
-                    cout << linha << endl
-                         << "lexema nao identificado [" << lex << "].";
-                    sai = true;
+                    cout << S << endl;
+
+                    throw lex;
                 }
                 break;
             case 6:
@@ -392,15 +388,14 @@ void analisadorLexico() {
                     lex += c;
                     S = 8;
                 } else if (c == EOF) {
-                    cout << linha << endl << "fim de arquivo nao esperado.";
-                    sai = true;
+                    throw ERR_EOF;
+
                     S = 0;
                 } else {
                     lex += c;
-                    // cout << S << endl;
-                    cout << linha << endl
-                         << "lexema nao identificado [" << lex << "].";
-                    sai = true;
+                    cout << S << endl;
+
+                    throw lex;
                 }
                 break;
             case 8:
@@ -410,15 +405,12 @@ void analisadorLexico() {
                     atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
                 } else if (c == EOF) {
-                    cout << linha << endl << "fim de arquivo nao esperado.";
-                    sai = true;
                     S = 0;
                 } else {
                     lex += c;
-                    // cout << S << endl;
-                    cout << linha << endl
-                         << "lexema nao identificado [" << lex << "].";
-                    sai = true;
+                    cout << S << endl;
+
+                    throw lex;
                 }
                 break;
             case 9:
@@ -471,15 +463,14 @@ void analisadorLexico() {
                     atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
                 } else if (c == EOF) {
-                    cout << linha << endl << "fim de arquivo nao esperado.";
-                    sai = true;
+                    throw ERR_EOF;
+
                     S = 0;
                 } else {
                     lex += c;
-                    // cout << S << endl;
-                    cout << linha << endl
-                         << "lexema nao identificado [" << lex << "].";
-                    sai = true;
+                    cout << S << endl;
+
+                    throw lex;
                 }
                 break;
             case 13:
@@ -509,8 +500,8 @@ void analisadorLexico() {
                     lex += c;
                     S = 15;
                 } else if (c == EOF) {
-                    cout << linha << endl << "fim de arquivo nao esperado.";
-                    sai = true;
+                    throw ERR_EOF;
+
                     S = 0;
                 } else if (c == '\"') {
                     lex += c;
@@ -519,10 +510,9 @@ void analisadorLexico() {
                     S = 1;
                 } else {
                     lex += c;
-                    // cout << S << endl;
-                    cout << linha << endl
-                         << "lexema nao identificado [" << lex << "].";
-                    sai = true;
+                    cout << S << endl;
+
+                    throw lex;
                 }
                 break;
             // case 16:
@@ -534,7 +524,7 @@ void analisadorLexico() {
             //         S = 1;
             //     } else if (c == EOF) {
             //         cout << linha << endl << "fim de arquivo nao esperado.";
-            //         sai = true;
+            //
             //         S = 0;
             //     }
             //     break;
@@ -570,23 +560,31 @@ void analisadorLexico() {
                 break;
         }
         // cout << c << " → " << S << endl;
-        if (sai) {
-            ERR = true;
-            return;
-        }
     }
     // cout << lex << endl;
     // cout << "fim do lexema" << endl;
 }
 
+// void casaToken(int token_esperado) {
+//     if (reg.token == token_esperado) {
+//         cout << "Casa Token casou " << reg.lexema << " com TOKEN "
+//              << token_esperado << endl;
+//         analisadorLexico();
+//     } else {
+//         cout << linha << endl << "token não esperado [" << reg.lexema <<
+//         "]."; ERR = true;
+//     }
+// }
+
 void casaToken(int token_esperado) {
     if (reg.token == token_esperado) {
+        cout << "token_esperado: " << token_esperado << " token encontrado: " << reg.token << "(" << reg.lexema << ")" << endl;
         cout << "Casa Token casou " << reg.lexema << " com TOKEN "
              << token_esperado << endl;
         analisadorLexico();
     } else {
-        cout << linha << endl << "token não esperado [" << reg.lexema << "].";
-        ERR = true;
+        cout << "token_esperado: " << token_esperado << endl;
+        throw ERR_TOKEN;
     }
 }
 
@@ -694,7 +692,8 @@ void Exp() {
 //     }
 // }
 
-// Dec -> ( int | boolean | char ) ID [:= [-]CONST | "[" CONST "]"] {, ID [:= [-]CONST | "[" CONST "]"] } ; | final ID = [-]CONST ;
+// Dec -> ( int | boolean | char ) ID [:= [-]CONST | "[" CONST "]"] {, ID [:=
+// [-]CONST | "[" CONST "]"] } ; | final ID = [-]CONST ;
 void Dec() {
     if (reg.token == TOKEN_FINAL) {
         casaToken(TOKEN_FINAL);
@@ -744,6 +743,171 @@ void Dec() {
     }
 }
 
+// pré declarando comando Cmd(); e CmdP();
+void Cmd();
+void CmdP();
+
+// BlocoCmd -> "{" { Cmd } "}"
+void BlocoCmd(){
+    casaToken(TOKEN_ABRE_CHAVE);
+    while(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
+       reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
+       reg.token == TOKEN_WRITELN){
+        Cmd();
+    }
+    casaToken(TOKEN_FECHA_CHAVE);
+}
+
+// CmdAtr -> ID ["["Exp"]"] := Exp
+void CmdAtr(){
+    casaToken(TOKEN_ID);
+    if(reg.token == TOKEN_ABRE_COLCH){
+        casaToken(TOKEN_ABRE_COLCH);
+        Exp();
+        casaToken(TOKEN_FECHA_COLCH);
+    }
+    casaToken(TOKEN_ATRIB);
+    Exp();
+}
+
+// CmdRep -> for"(" [CmdP] {, CmdP}; Exp; [CmdP] {, CmdP} ")" (Cmd | BlocoCmd)
+void CmdRep() {
+    cout << 1 << endl;
+    casaToken(TOKEN_FOR);
+    cout << 2 << endl;
+    casaToken(TOKEN_ABRE_PAREN);
+    cout << 3 << endl;
+    if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
+       reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
+       reg.token == TOKEN_WRITELN){
+        CmdP();
+    }
+    cout << 4 << endl;
+    while(reg.token == TOKEN_VIRG){
+        casaToken(TOKEN_VIRG);
+        if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
+        reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
+        reg.token == TOKEN_WRITELN){
+            CmdP();
+        }
+    }
+    cout << 5 << endl;
+    casaToken(TOKEN_PONTO_VIRG);
+    cout << 6 << endl;
+    Exp();
+    casaToken(TOKEN_PONTO_VIRG);
+    if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
+       reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
+       reg.token == TOKEN_WRITELN){
+        CmdP();
+    }
+    while(reg.token == TOKEN_VIRG){
+        casaToken(TOKEN_VIRG);
+        if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
+        reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
+        reg.token == TOKEN_WRITELN){
+            CmdP();
+        }
+    }
+    casaToken(TOKEN_FECHA_PAREN);
+    if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
+       reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
+       reg.token == TOKEN_WRITELN){
+           Cmd();
+       }
+    else {
+        BlocoCmd();
+    }
+}
+
+//CmdIf -> if"(" Exp ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
+void CmdIf() {
+    casaToken(TOKEN_IF);
+    casaToken(TOKEN_ABRE_PAREN);
+    Exp();
+    casaToken(TOKEN_FECHA_PAREN);
+    casaToken(TOKEN_THEN);
+
+    if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
+    reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
+    reg.token == TOKEN_WRITELN) {
+        Cmd();
+    } else {
+        BlocoCmd();
+    }
+
+    if(reg.token == TOKEN_ELSE) {
+        casaToken(TOKEN_ELSE);
+        if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
+        reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
+        reg.token == TOKEN_WRITELN) {
+            Cmd();
+        } else {
+            BlocoCmd();
+        }
+    }
+}
+//CmdNull -> ;
+void CmdNull() {
+    casaToken(TOKEN_PONTO_VIRG);
+}
+//CmdRead -> readln "(" ID ["[" Exp "]"] ")"
+void CmdRead() {
+    casaToken(TOKEN_READLN);
+    casaToken(TOKEN_ABRE_PAREN);
+    casaToken(TOKEN_ID);
+    if(reg.token == TOKEN_ABRE_COLCH){
+        casaToken(TOKEN_ABRE_COLCH);
+        Exp();
+        casaToken(TOKEN_FECHA_COLCH);
+    }
+    casaToken(TOKEN_FECHA_PAREN);
+}
+//CmdWrite -> (write|writeln)"(" Exp {, Exp} ")"
+void CmdWrite(){
+    if(reg.token == TOKEN_WRITE){
+        casaToken(TOKEN_WRITE);
+    } else {
+        casaToken(TOKEN_WRITELN);
+    }
+    
+    casaToken(TOKEN_ABRE_PAREN);
+    Exp();
+    while(reg.token == TOKEN_VIRG){
+        casaToken(TOKEN_VIRG);
+        Exp();
+    }
+    casaToken(TOKEN_FECHA_PAREN);
+}
+
+// CmdP -> CmdAtr | CmdWrite | CmdRead
+void CmdP(){
+    if(reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN){
+        CmdWrite();
+    } else if(reg.token == TOKEN_READLN){
+        CmdRead();
+    } else {
+        CmdAtr();
+    }
+}
+
+//Cmd -→ CmdP ; | CmdFor | CmdIf | CmdNull
+void Cmd(){
+    if(reg.token == TOKEN_FOR){
+        CmdRep();
+    }
+    else if(reg.token == TOKEN_IF){
+        CmdIf();
+    }
+    else if (reg.token == TOKEN_PONTO_VIRG){
+        CmdNull();
+    }
+    else /*if(reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN || reg.token == TOKEN_READLN || reg.token == TOKEN_ID || reg.token == TOKEN_PONTO_VIRG)*/{
+        CmdP();
+        casaToken(TOKEN_PONTO_VIRG);
+    }
+}
+
 // Prog -> { Dec } main BlocoCmd EOF
 void Prog() {
     while (reg.token == TOKEN_INT || reg.token == TOKEN_CHAR ||
@@ -751,6 +915,7 @@ void Prog() {
         Dec();
     }
     casaToken(TOKEN_MAIN);
+    BlocoCmd();
 }
 
 int main() {
@@ -794,8 +959,24 @@ int main() {
     t.inserir("EOF", TOKEN_EOF);  // CONSERTAR !!!!!
     t.inserir("boolean", TOKEN_BOOL);
 
-    analisadorLexico();
-    Prog();
+    try {
+        analisadorLexico();
+        Prog();
+        casaToken(TOKEN_EOF);
+    } catch (int err) {
+        if (err == ERR_TOKEN) {
+            cout << linha << endl
+                 << "token não esperado [" << reg.lexema << "].";
+        } else if (err == ERR_CHAR) {
+            cout << linha << endl << "caractere invalido.";
+        } else if (err == ERR_EOF) {
+            cout << linha << endl << "fim de arquivo nao esperado.";
+        }
+        return 0;
+    } catch (string err) {
+        cout << linha << endl << "lexema nao identificado [" << err << "].";
+        return 0;
+    }
 
     // while (reg.token != TOKEN_EOF && !ERR) {
     //     analisadorLexico();
@@ -807,7 +988,8 @@ int main() {
 
     //     // analise sintatica...
     // }
-    if (!ERR) cout << linha << " linhas compiladas.";
+    // if (!ERR) cout << linha << " linhas compiladas.";
     // t.mostrar();
+    cout << linha << " linhas compiladas.";
     return 0;
 }
