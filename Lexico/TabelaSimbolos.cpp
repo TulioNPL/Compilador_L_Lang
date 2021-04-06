@@ -43,6 +43,7 @@ using namespace std;
 #define TOKEN_WRITE 37
 #define TOKEN_WRITELN 38
 #define TOKEN_MAIN 39
+#define TOKEN_BOOL 40
 
 struct Simbolo {
     string lexema;
@@ -214,10 +215,11 @@ void analisadorLexico() {
         // cout << "caractere atual: " << (int)c << endl;
         if (c != EOF) {
             c = cin.get();
-            if(!(c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\'' || c == EOF
-                    || c == '\"' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
-                    || (c >= '0' && c <= '9') || alfabeto.find(c) != std::string::npos)) {
-
+            if (!(c == ' ' || c == '\n' || c == '\r' || c == '\t' ||
+                  c == '\'' || c == EOF || c == '\"' ||
+                  (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                  (c >= '0' && c <= '9') ||
+                  alfabeto.find(c) != std::string::npos)) {
                 cout << linha << endl << "caractere invalido.";
                 ERR = true;
                 break;
@@ -577,6 +579,180 @@ void analisadorLexico() {
     // cout << "fim do lexema" << endl;
 }
 
+void casaToken(int token_esperado) {
+    if (reg.token == token_esperado) {
+        cout << "Casa Token casou " << reg.lexema << " com TOKEN "
+             << token_esperado << endl;
+        analisadorLexico();
+    } else {
+        cout << linha << endl << "token não esperado [" << reg.lexema << "].";
+        ERR = true;
+    }
+}
+
+/* pré declarando a função Exp() para o compilador aceitar
+ as demais funções declaradas posteriormente */
+void Exp();
+
+// F -> not F | "(" Exp ")" | CONST | ID [ "[" Exp "]" ]
+void F() {
+    if (reg.token == TOKEN_NOT) {
+        casaToken(TOKEN_NOT);
+        F();
+    } else if (reg.token == TOKEN_ABRE_PAREN) {
+        casaToken(TOKEN_ABRE_PAREN);
+        Exp();
+        casaToken(TOKEN_FECHA_PAREN);
+    } else if (reg.token == TOKEN_CONST) {
+        casaToken(TOKEN_CONST);
+    } else if (reg.token == TOKEN_ID) {
+        casaToken(TOKEN_ID);
+        if (reg.token == TOKEN_ABRE_COLCH) {
+            casaToken(TOKEN_ABRE_COLCH);
+            Exp();
+            casaToken(TOKEN_FECHA_COLCH);
+        }
+    }
+}
+
+// T ->  F { ( * | / | % | and ) F }
+void T() {
+    if (reg.token == TOKEN_NOT || reg.token == TOKEN_ABRE_PAREN ||
+        reg.token == TOKEN_CONST || reg.token == TOKEN_ID) {
+        F();
+        while (reg.token == TOKEN_ASTER || reg.token == TOKEN_BARRA ||
+               reg.token == TOKEN_MOD || reg.token == TOKEN_AND) {
+            if (reg.token == TOKEN_ASTER) {
+                casaToken(TOKEN_ASTER);
+            } else if (reg.token == TOKEN_BARRA) {
+                casaToken(TOKEN_BARRA);
+            } else if (reg.token == TOKEN_MOD) {
+                casaToken(TOKEN_MOD);
+            } else {
+                casaToken(TOKEN_AND);
+            }
+            F();
+        }
+    }
+}
+
+// ExpS -> [ + | - ] T { ( + | - | or ) T }
+void ExpS() {
+    if (reg.token == TOKEN_MAIS) {
+        casaToken(TOKEN_MAIS);
+    } else if (reg.token == TOKEN_MENOS) {
+        casaToken(TOKEN_MENOS);
+    }
+
+    T();
+    while (reg.token == TOKEN_MAIS || reg.token == TOKEN_MENOS ||
+           reg.token == TOKEN_OR) {
+        if (reg.token == TOKEN_MAIS) {
+            casaToken(TOKEN_MAIS);
+        } else if (reg.token == TOKEN_MENOS) {
+            casaToken(TOKEN_MENOS);
+        } else {
+            casaToken(TOKEN_OR);
+        }
+        T();
+    }
+}
+
+// Exp -> ExpS [ ( = | > | < | <> | <= | >= ) ExpS ]
+void Exp() {
+    if (reg.token == TOKEN_NOT || reg.token == TOKEN_ABRE_PAREN ||
+        reg.token == TOKEN_CONST || reg.token == TOKEN_ID ||
+        reg.token == TOKEN_MAIS || reg.token == TOKEN_MENOS) {
+        ExpS();
+        if (reg.token == TOKEN_IGUAL || reg.token == TOKEN_MAIOR ||
+            reg.token == TOKEN_MENOR || reg.token == TOKEN_DIF ||
+            reg.token == TOKEN_MENOR_IGUAL || reg.token == TOKEN_MAIOR_IGUAL) {
+            if (reg.token == TOKEN_IGUAL) {
+                casaToken(TOKEN_IGUAL);
+            } else if (reg.token == TOKEN_MAIOR) {
+                casaToken(TOKEN_MAIOR);
+            } else if (reg.token == TOKEN_MENOR) {
+                casaToken(TOKEN_MENOR);
+            } else if (reg.token == TOKEN_DIF) {
+                casaToken(TOKEN_DIF);
+            } else if (reg.token == TOKEN_MENOR_IGUAL) {
+                casaToken(TOKEN_MENOR_IGUAL);
+            } else {
+                casaToken(TOKEN_MAIOR_IGUAL);
+            }
+            ExpS();
+        }
+    }
+}
+
+// void Prog(){
+//     if (reg.token == TOKEN_INT){
+//         cout << "Token INT encontrado" << endl;
+//         analisadorLexico();
+//         cout << "Proximo token: " << reg.lexema << " → numero do token: " <<
+//         reg.token << endl;
+//     }
+// }
+
+// Dec -> ( int | boolean | char ) ID [:= [-]CONST | "[" CONST "]"] {, ID [:= [-]CONST | "[" CONST "]"] } ; | final ID = [-]CONST ;
+void Dec() {
+    if (reg.token == TOKEN_FINAL) {
+        casaToken(TOKEN_FINAL);
+        casaToken(TOKEN_ID);
+        casaToken(TOKEN_IGUAL);
+        if (reg.token == TOKEN_MENOS) {
+            casaToken(TOKEN_MENOS);
+        }
+        casaToken(TOKEN_CONST);
+        casaToken(TOKEN_PONTO_VIRG);
+    } else {
+        if (reg.token == TOKEN_INT) {
+            casaToken(TOKEN_INT);
+        } else if (reg.token == TOKEN_CHAR) {
+            casaToken(TOKEN_CHAR);
+        } else {
+            casaToken(TOKEN_BOOL);
+        }
+        casaToken(TOKEN_ID);
+        if (reg.token == TOKEN_ATRIB) {
+            casaToken(TOKEN_ATRIB);
+            if (reg.token == TOKEN_MENOS) {
+                casaToken(TOKEN_MENOS);
+            }
+            casaToken(TOKEN_CONST);
+        } else if (reg.token == TOKEN_ABRE_COLCH) {
+            casaToken(TOKEN_ABRE_COLCH);
+            casaToken(TOKEN_CONST);
+            casaToken(TOKEN_FECHA_COLCH);
+        }
+        while (reg.token == TOKEN_VIRG) {
+            casaToken(TOKEN_VIRG);
+            casaToken(TOKEN_ID);
+            if (reg.token == TOKEN_ATRIB) {
+                casaToken(TOKEN_ATRIB);
+                if (reg.token == TOKEN_MENOS) {
+                    casaToken(TOKEN_MENOS);
+                }
+                casaToken(TOKEN_CONST);
+            } else if (reg.token == TOKEN_ABRE_COLCH) {
+                casaToken(TOKEN_ABRE_COLCH);
+                casaToken(TOKEN_CONST);
+                casaToken(TOKEN_FECHA_COLCH);
+            }
+        }
+        casaToken(TOKEN_PONTO_VIRG);
+    }
+}
+
+// Prog -> { Dec } main BlocoCmd EOF
+void Prog() {
+    while (reg.token == TOKEN_INT || reg.token == TOKEN_CHAR ||
+           reg.token == TOKEN_BOOL || reg.token == TOKEN_FINAL) {
+        Dec();
+    }
+    casaToken(TOKEN_MAIN);
+}
+
 int main() {
     // iniciando tabela de simbolos
     t.inserir("final", TOKEN_FINAL);
@@ -616,17 +792,21 @@ int main() {
     t.inserir("]", TOKEN_FECHA_COLCH);
     t.inserir("main", TOKEN_MAIN);
     t.inserir("EOF", TOKEN_EOF);  // CONSERTAR !!!!!
+    t.inserir("boolean", TOKEN_BOOL);
 
-    
-    while (reg.token != TOKEN_EOF && !ERR) {
-        analisadorLexico();
-        // cout << "token " << reg.lexema << " identificado" << endl;
-        // cout << endl << "-- registro lexico atual --" << endl;
-        // cout << "posição → " << reg.posicao << ", lexema → " << reg.lexema
-        //      << ", tipo → " << reg.tipo << ", tamanho → " << reg.tamanho << ", token → " << reg.token << endl;
+    analisadorLexico();
+    Prog();
 
-        // analise sintatica...
-    }
+    // while (reg.token != TOKEN_EOF && !ERR) {
+    //     analisadorLexico();
+    //     // cout << "token " << reg.lexema << " identificado" << endl;
+    //     // cout << endl << "-- registro lexico atual --" << endl;
+    //     // cout << "posição → " << reg.posicao << ", lexema → " << reg.lexema
+    //     //      << ", tipo → " << reg.tipo << ", tamanho → " << reg.tamanho
+    //     << ", token → " << reg.token << endl;
+
+    //     // analise sintatica...
+    // }
     if (!ERR) cout << linha << " linhas compiladas.";
     // t.mostrar();
     return 0;
