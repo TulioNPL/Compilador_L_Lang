@@ -262,10 +262,10 @@ void analisadorLexico() {
                     tok = TOKEN_CONST;
                     lex += c;
                     S = 6;
-                } else if (c == '=' || c == '+' || c == '*' || c == '[' || c == '-' ||
-                           c == ']' || c == '(' || c == ')' || c == '{' ||
-                           c == '}' || c == '.' || c == ';' || c == ',' ||
-                           c == '%') {
+                } else if (c == '=' || c == '+' || c == '*' || c == '[' ||
+                           c == '-' || c == ']' || c == '(' || c == ')' ||
+                           c == '{' || c == '}' || c == '.' || c == ';' ||
+                           c == ',' || c == '%') {
                     lex += c;
                     atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
@@ -510,8 +510,8 @@ void analisadorLexico() {
                     S = 1;
                 } else {
                     lex += c;
-                    //cout << S << endl;
-                    
+                    // cout << S << endl;
+
                     throw lex;
                 }
                 break;
@@ -578,8 +578,9 @@ void analisadorLexico() {
 
 void casaToken(int token_esperado) {
     if (reg.token == token_esperado) {
-        // cout << "token_esperado: " << token_esperado << " token encontrado: " << reg.token << "(" << reg.lexema << ")" << endl;
-        // cout << "Casa Token casou " << reg.lexema << " com TOKEN "
+        // cout << "token_esperado: " << token_esperado << " token encontrado: "
+        // << reg.token << "(" << reg.lexema << ")" << endl; cout << "Casa Token
+        // casou " << reg.lexema << " com TOKEN "
         //      << token_esperado << endl;
         analisadorLexico();
     } else {
@@ -748,20 +749,21 @@ void Cmd();
 void CmdP();
 
 // BlocoCmd -> "{" { Cmd } "}"
-void BlocoCmd(){
+void BlocoCmd() {
     casaToken(TOKEN_ABRE_CHAVE);
-    while(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
-       reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
-       reg.token == TOKEN_WRITELN){
+    while (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
+           reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
+           reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
+           reg.token == TOKEN_WRITELN) {
         Cmd();
     }
     casaToken(TOKEN_FECHA_CHAVE);
 }
 
 // CmdAtr -> ID ["["Exp"]"] := Exp
-void CmdAtr(){
+void CmdAtr() {
     casaToken(TOKEN_ID);
-    if(reg.token == TOKEN_ABRE_COLCH){
+    if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
         Exp();
         casaToken(TOKEN_FECHA_COLCH);
@@ -770,51 +772,57 @@ void CmdAtr(){
     Exp();
 }
 
-// CmdRep -> for"(" [CmdP] {, CmdP}; Exp; [CmdP] {, CmdP} ")" (Cmd | BlocoCmd)
+// CmdRep -> for"(" [CmdP {, CmdP}]; Exp; [CmdP {, CmdP}] ")" (Cmd | BlocoCmd)
 void CmdRep() {
     casaToken(TOKEN_FOR);
     casaToken(TOKEN_ABRE_PAREN);
-    if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
-       reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
-       reg.token == TOKEN_WRITELN){
+    if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
+        reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
+        reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
+        reg.token == TOKEN_WRITELN) {
         CmdP();
-    }
-    while(reg.token == TOKEN_VIRG){
-        casaToken(TOKEN_VIRG);
-        if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
-        reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
-        reg.token == TOKEN_WRITELN){
-            CmdP();
+        while (reg.token == TOKEN_VIRG) {
+            casaToken(TOKEN_VIRG);
+            if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
+                reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
+                reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
+                reg.token == TOKEN_WRITELN) {
+                CmdP();
+            }
         }
     }
+
     casaToken(TOKEN_PONTO_VIRG);
     Exp();
     casaToken(TOKEN_PONTO_VIRG);
-    if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
-       reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
-       reg.token == TOKEN_WRITELN){
+    if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
+        reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
+        reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
+        reg.token == TOKEN_WRITELN) {
         CmdP();
-    }
-    while(reg.token == TOKEN_VIRG){
-        casaToken(TOKEN_VIRG);
-        if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
-        reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
-        reg.token == TOKEN_WRITELN){
-            CmdP();
+        while (reg.token == TOKEN_VIRG) {
+            casaToken(TOKEN_VIRG);
+            if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
+                reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
+                reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
+                reg.token == TOKEN_WRITELN) {
+                CmdP();
+            }
         }
     }
+
     casaToken(TOKEN_FECHA_PAREN);
-    if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
-       reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
-       reg.token == TOKEN_WRITELN){
-           Cmd();
-       }
-    else {
+    if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
+        reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
+        reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
+        reg.token == TOKEN_WRITELN) {
+        Cmd();
+    } else {
         BlocoCmd();
     }
 }
 
-//CmdIf -> if"(" Exp ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
+// CmdIf -> if"(" Exp ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
 void CmdIf() {
     casaToken(TOKEN_IF);
     casaToken(TOKEN_ABRE_PAREN);
@@ -822,52 +830,52 @@ void CmdIf() {
     casaToken(TOKEN_FECHA_PAREN);
     casaToken(TOKEN_THEN);
 
-    if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
-    reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
-    reg.token == TOKEN_WRITELN) {
+    if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
+        reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
+        reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
+        reg.token == TOKEN_WRITELN) {
         Cmd();
     } else {
         BlocoCmd();
     }
 
-    if(reg.token == TOKEN_ELSE) {
+    if (reg.token == TOKEN_ELSE) {
         casaToken(TOKEN_ELSE);
-        if(reg.token == TOKEN_ID || reg.token == TOKEN_FOR || reg.token == TOKEN_IF || 
-        reg.token == TOKEN_PONTO_VIRG || reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE || 
-        reg.token == TOKEN_WRITELN) {
+        if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
+            reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
+            reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
+            reg.token == TOKEN_WRITELN) {
             Cmd();
         } else {
             BlocoCmd();
         }
     }
 }
-//CmdNull -> ;
-void CmdNull() {
-    casaToken(TOKEN_PONTO_VIRG);
-}
-//CmdRead -> readln "(" ID ["[" Exp "]"] ")"
+// CmdNull -> ;
+void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
+// CmdRead -> readln "(" ID ["[" Exp "]"] ")"
 void CmdRead() {
     casaToken(TOKEN_READLN);
     casaToken(TOKEN_ABRE_PAREN);
     casaToken(TOKEN_ID);
-    if(reg.token == TOKEN_ABRE_COLCH){
+    if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
         Exp();
         casaToken(TOKEN_FECHA_COLCH);
     }
     casaToken(TOKEN_FECHA_PAREN);
 }
-//CmdWrite -> (write|writeln)"(" Exp {, Exp} ")"
-void CmdWrite(){
-    if(reg.token == TOKEN_WRITE){
+// CmdWrite -> (write|writeln)"(" Exp {, Exp} ")"
+void CmdWrite() {
+    if (reg.token == TOKEN_WRITE) {
         casaToken(TOKEN_WRITE);
     } else {
         casaToken(TOKEN_WRITELN);
     }
-    
+
     casaToken(TOKEN_ABRE_PAREN);
     Exp();
-    while(reg.token == TOKEN_VIRG){
+    while (reg.token == TOKEN_VIRG) {
         casaToken(TOKEN_VIRG);
         Exp();
     }
@@ -875,28 +883,28 @@ void CmdWrite(){
 }
 
 // CmdP -> CmdAtr | CmdWrite | CmdRead
-void CmdP(){
-    if(reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN){
+void CmdP() {
+    if (reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
         CmdWrite();
-    } else if(reg.token == TOKEN_READLN){
+    } else if (reg.token == TOKEN_READLN) {
         CmdRead();
     } else {
         CmdAtr();
     }
 }
 
-//Cmd -→ CmdP ; | CmdFor | CmdIf | CmdNull
-void Cmd(){
-    if(reg.token == TOKEN_FOR){
+// Cmd -→ CmdP ; | CmdFor | CmdIf | CmdNull
+void Cmd() {
+    if (reg.token == TOKEN_FOR) {
         CmdRep();
-    }
-    else if(reg.token == TOKEN_IF){
+    } else if (reg.token == TOKEN_IF) {
         CmdIf();
-    }
-    else if (reg.token == TOKEN_PONTO_VIRG){
+    } else if (reg.token == TOKEN_PONTO_VIRG) {
         CmdNull();
-    }
-    else /*if(reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN || reg.token == TOKEN_READLN || reg.token == TOKEN_ID || reg.token == TOKEN_PONTO_VIRG)*/{
+    } else /*if(reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN ||
+              reg.token == TOKEN_READLN || reg.token == TOKEN_ID || reg.token ==
+              TOKEN_PONTO_VIRG)*/
+    {
         CmdP();
         casaToken(TOKEN_PONTO_VIRG);
     }
