@@ -13,15 +13,15 @@ Trabalho de compiladores
 ## Parte 2
 [X] 2.1 Escrever uma gramática LL(1) com E.R.
 
-[ ] 2.2 Implementar o procedimento CasaToken.
+[X] 2.2 Implementar o procedimento CasaToken.
 
-[ ] 2.3 Implementar um procedimento para cada símbolo não terminal da gramática.
+[X] 2.3 Implementar um procedimento para cada símbolo não terminal da gramática.
 
-[ ] 2.4 O corpo principal do compilador deverá ler o primeiro token do programa-fonte
+[X] 2.4 O corpo principal do compilador deverá ler o primeiro token do programa-fonte
 (chamada ao analisador léxico) e em seguida chamar o procedimento
 correspondente ao símbolo inicial da gramática.
 
-[ ] 2.5 Testar o analisador sintático.
+[X] 2.5 Testar o analisador sintático.
 
 ## Parte 3
 
