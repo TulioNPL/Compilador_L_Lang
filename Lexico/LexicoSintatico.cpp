@@ -1,6 +1,7 @@
 /*
 Implementação do Analisador Sintático e Léxico para a Linguagem L
-Disciplina Compiladores PUC-MG
+Disciplina COMPILADORES (6806100) 
+PUC-MG
 Professor Alexei Machado
 
 Grupo:
@@ -17,53 +18,54 @@ using namespace std;
 
 // Definição/numeração dos tokens da linguagem.
 
-#define TOKEN_ID 1 // identificadores
-#define TOKEN_CONST 2 // constantes
-#define TOKEN_IGUAL 3 // =
-#define TOKEN_ATRIB 4 // :-
-#define TOKEN_ABRE_PAREN 5 // (
-#define TOKEN_FECHA_PAREN 6 // )
-#define TOKEN_MENOR 7 // <
-#define TOKEN_MAIOR 8 // >
-#define TOKEN_DIF 9 // <>
-#define TOKEN_MAIOR_IGUAL 10 // >=
-#define TOKEN_MENOR_IGUAL 11 // <=
-#define TOKEN_VIRG 12 // ,
-#define TOKEN_MAIS 13 // +
-#define TOKEN_MENOS 14 // -
-#define TOKEN_ASTER 15 // *
-#define TOKEN_BARRA 16 // /
-#define TOKEN_PONTO_VIRG 17 // ;
-#define TOKEN_ABRE_CHAVE 18 // {
-#define TOKEN_FECHA_CHAVE 19 // }
-#define TOKEN_MOD 20 // %
-#define TOKEN_ABRE_COLCH 21 // [
-#define TOKEN_FECHA_COLCH 22 // ]
-#define TOKEN_EOF 23 // EOF ou -1
-#define TOKEN_FINAL 24 // final
-#define TOKEN_INT 25 // int
-#define TOKEN_CHAR 26 // char
-#define TOKEN_FOR 27 // for
-#define TOKEN_IF 28 // if
-#define TOKEN_TRUE 29 // true
-#define TOKEN_ELSE 30 // else
-#define TOKEN_AND 31 // and
-#define TOKEN_OR 32 // or
-#define TOKEN_NOT 33 // not
-#define TOKEN_THEN 34 // then
-#define TOKEN_READLN 35 // readln
-#define TOKEN_FALSE 36 // false
-#define TOKEN_WRITE 37 // write
-#define TOKEN_WRITELN 38 // writeln
-#define TOKEN_MAIN 39 // main
-#define TOKEN_BOOL 40 // boolean
+#define TOKEN_ID 1            // identificadores
+#define TOKEN_CONST 2         // constantes
+#define TOKEN_IGUAL 3         // =
+#define TOKEN_ATRIB 4         // :-
+#define TOKEN_ABRE_PAREN 5    // (
+#define TOKEN_FECHA_PAREN 6   // )
+#define TOKEN_MENOR 7         // <
+#define TOKEN_MAIOR 8         // >
+#define TOKEN_DIF 9           // <>
+#define TOKEN_MAIOR_IGUAL 10  // >=
+#define TOKEN_MENOR_IGUAL 11  // <=
+#define TOKEN_VIRG 12         // ,
+#define TOKEN_MAIS 13         // +
+#define TOKEN_MENOS 14        // -
+#define TOKEN_ASTER 15        // *
+#define TOKEN_BARRA 16        // /
+#define TOKEN_PONTO_VIRG 17   // ;
+#define TOKEN_ABRE_CHAVE 18   // {
+#define TOKEN_FECHA_CHAVE 19  // }
+#define TOKEN_MOD 20          // %
+#define TOKEN_ABRE_COLCH 21   // [
+#define TOKEN_FECHA_COLCH 22  // ]
+#define TOKEN_EOF 23          // EOF ou -1
+#define TOKEN_FINAL 24        // final
+#define TOKEN_INT 25          // int
+#define TOKEN_CHAR 26         // char
+#define TOKEN_FOR 27          // for
+#define TOKEN_IF 28           // if
+#define TOKEN_TRUE 29         // true
+#define TOKEN_ELSE 30         // else
+#define TOKEN_AND 31          // and
+#define TOKEN_OR 32           // or
+#define TOKEN_NOT 33          // not
+#define TOKEN_THEN 34         // then
+#define TOKEN_READLN 35       // readln
+#define TOKEN_FALSE 36        // false
+#define TOKEN_WRITE 37        // write
+#define TOKEN_WRITELN 38      // writeln
+#define TOKEN_MAIN 39         // main
+#define TOKEN_BOOL 40         // boolean
 
 // definição de erros para o analisador
-#define ERR_CHAR -1 // usado para erro de caractere não esperado
-#define ERR_EOF -2 // usado para erro de EOF nao esperado
-#define ERR_TOKEN -3 // usado para erro de token não esperado
+#define ERR_CHAR -1   // usado para erro de caractere não esperado
+#define ERR_EOF -2    // usado para erro de EOF nao esperado
+#define ERR_TOKEN -3  // usado para erro de token não esperado
 
-// Definição da estrutura dos símbolos para serem inseridos na tabela de símbolos
+// Definição da estrutura dos símbolos para serem inseridos na tabela de
+// símbolos
 struct Simbolo {
     string lexema;
     int token;
@@ -76,10 +78,10 @@ struct RegLex {
     int posicao;
     string tipo;
     size_t tamanho;
-}; 
+};
 
 // caracteres aceitos pelo compilador para verificação de caracteres invalidos
-string alfabeto = "_.,;:(){}[]+-/%@!?><=*";
+string alfabeto = "_.,;:(){}[]+-/%@!?><=*$";
 
 // iniciando o registro lexico variável global
 RegLex reg;
@@ -161,8 +163,9 @@ int TabelaSimbolos::pesquisar(string lex) {
     return pos;
 }
 
-// função de hash: multiplica o valor do char de cada posição do lexema pelo indice da sua posição na string
-// então pega o resultado dessa soma mod numero de posições da tabela
+// função de hash: multiplica o valor do char de cada posição do lexema pelo
+// indice da sua posição na string então pega o resultado dessa soma mod numero
+// de posições da tabela
 int TabelaSimbolos::hash(string lex) {
     int soma = 0;
     int pos;
@@ -211,7 +214,10 @@ void atualizarTabela(string lex, string tipo, int token, size_t tamanho) {
 // iniciando a contagem de linhas para a mensagem de resultado ou de erro
 int linha = 1;
 
-/* 
+// inicializar o char;
+char c;
+
+/*
 ----------------------------------------------------
 Analisador Léxico
 Automato feito por meio de um switch case simples
@@ -229,7 +235,7 @@ void analisadorLexico() {
 
     // c = caractere lido
     // S = estado do automato
-    char c;
+
     int S = 0;
 
     // criando variaveis para criação do reglex e do token
@@ -241,9 +247,9 @@ void analisadorLexico() {
 
     // S = 1 é o estado final, então o automato roda até chegar nele
     while (S != 1) {
-        // cout << "caractere atual: " << (int)c << endl;
+        // cout << "começo caractere atual: " << (int)c << "=" << c<< endl;
 
-        /* 
+        /*
         verifica se o caractere lido é fim de arquivo
         se for, retorna o token do fim de arquivo para o registro léxico
         se não, verifica se o caractere é valido.
@@ -256,7 +262,6 @@ void analisadorLexico() {
                   (c >= '0' && c <= '9') ||
                   alfabeto.find(c) != std::string::npos)) {
                 throw ERR_CHAR;
-                break;
             }
         } else {
             atualizarTabela("EOF", tipo, TOKEN_EOF, tamanho);
@@ -321,7 +326,6 @@ void analisadorLexico() {
                 } else if (c == EOF) {
                     S = 0;
                 } else {
-                    lex += c;
                     // cout << S << endl;
                     // cout << (int)c << " " << c << endl;
                     throw lex;
@@ -333,7 +337,7 @@ void analisadorLexico() {
                 S = 0;
                 // Aceita token
                 break;
-            case 2: // IDENTIFICADORES 
+            case 2:  // IDENTIFICADORES
                 S = 0;
                 if (c == '_') {
                     S = 2;
@@ -347,13 +351,12 @@ void analisadorLexico() {
 
                     S = 0;
                 } else {
-                    lex += c;
-                    cout << S << endl;
+                    // cout << S << endl;
 
                     throw lex;
                 }
                 break;
-            case 3: // IDENTIFICADORES 
+            case 3:  // IDENTIFICADORES
                 if (c == '_' || (c >= 'a' && c <= 'z') ||
                     (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
                     S = 3;
@@ -364,9 +367,10 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 4: // CHAR
-                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-                    (c >= '0' && c <= '9')) {
+            case 4:  // CHAR
+                // if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                //     (c >= '0' && c <= '9')) {
+                if (c != EOF) {
                     lex += c;
                     S = 5;
                 } else if (c == EOF) {
@@ -374,13 +378,12 @@ void analisadorLexico() {
 
                     S = 0;
                 } else {
-                    lex += c;
                     // cout << S << endl;
 
                     throw lex;
                 }
                 break;
-            case 5: // CHAR
+            case 5:  // CHAR
                 if (c == '\'') {
                     lex += c;
                     tamanho = lex.size();
@@ -391,13 +394,12 @@ void analisadorLexico() {
 
                     S = 0;
                 } else {
-                    lex += c;
                     // cout << S << endl;
 
                     throw lex;
                 }
                 break;
-            case 6: // INTS OU CHARS HEXADECIMAIS 
+            case 6:  // INTS OU CHARS HEXADECIMAIS
                 if (c >= '0' && c <= '9') {
                     lex += c;
                     S = 9;
@@ -413,7 +415,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 7: //CHARS HEXADECIMAIS 
+            case 7:  // CHARS HEXADECIMAIS
                 if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') ||
                     (c >= '0' && c <= '9')) {
                     lex += c;
@@ -423,28 +425,28 @@ void analisadorLexico() {
 
                     S = 0;
                 } else {
-                    lex += c;
                     // cout << S << endl;
 
                     throw lex;
                 }
                 break;
-            case 8: //CHARS HEXADECIMAIS 
+            case 8:  // CHARS HEXADECIMAIS
                 if (c == 'h') {
                     lex += c;
                     tamanho = lex.size();
                     atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
                 } else if (c == EOF) {
+                    throw ERR_EOF;
+
                     S = 0;
                 } else {
-                    lex += c;
                     // cout << S << endl;
 
                     throw lex;
                 }
                 break;
-            case 9: // INTS OU CHARS HEXADECIMAIS 
+            case 9:  // INTS OU CHARS HEXADECIMAIS
                 if (c >= '0' && c <= '9') {
                     lex += c;
                     S = 10;
@@ -459,7 +461,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 10: // INTS OU CHARS HEXADECIMAIS 
+            case 10:  // INTS OU CHARS HEXADECIMAIS
                 if (c == 'h') {
                     tipo = "char";
                     lex += c;
@@ -477,7 +479,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 11: // INTS 
+            case 11:  // INTS
                 if (c >= '0' && c <= '9') {
                     lex += c;
                     S = 11;
@@ -488,7 +490,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 12: // :=
+            case 12:  // :=
                 if (c == '=') {
                     lex += c;
                     atualizarTabela(lex, tipo, tok, tamanho);
@@ -498,13 +500,12 @@ void analisadorLexico() {
 
                     S = 0;
                 } else {
-                    lex += c;
                     // cout << S << endl;
 
                     throw lex;
                 }
                 break;
-            case 13: // <> ou <= 
+            case 13:  // <> ou <=
                 if (c == '>' || c == '=') {
                     lex += c;
                     atualizarTabela(lex, tipo, tok, tamanho);
@@ -515,7 +516,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 14: // >=
+            case 14:  // >=
                 if (c == '=') {
                     lex += c;
                     atualizarTabela(lex, tipo, tok, tamanho);
@@ -526,7 +527,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 15: // STRINGS
+            case 15:  // STRINGS
                 if (c != '\"' && c != '$' && c != '\n' && c != EOF) {
                     lex += c;
                     S = 15;
@@ -540,7 +541,6 @@ void analisadorLexico() {
                     atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
                 } else {
-                    lex += c;
                     // cout << S << endl;
 
                     throw lex;
@@ -559,17 +559,24 @@ void analisadorLexico() {
             //         S = 0;
             //     }
             //     break;
-            case 17: // comentário
+            case 17:  // comentário
                 if (c == '*') {
                     lex += c;
                     S = 18;
                 } else {
+                    atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
                     cin.unget();
                 }
                 break;
             case 18:
-                if (c != '*') {
+                if (c == '\n') {
+                    lex += c;
+                    S = 18;
+                    linha++;
+                } else if (c == EOF) {
+                    throw ERR_EOF;
+                } else if (c != '*' && c != '\n') {
                     lex += c;
                     S = 18;
                 } else {
@@ -584,7 +591,13 @@ void analisadorLexico() {
                 } else if (c == '/') {
                     lex += c;
                     S = 0;
-                } else if (c != '*' && c != '/') {
+                } else if (c == '\n') {
+                    linha++;
+                    lex += c;
+                    S = 18;
+                } else if (c == EOF) {
+                    throw ERR_EOF;
+                } else if (c != '*' && c != '/' && c != '\n') {
                     lex += c;
                     S = 18;
                 }
@@ -594,6 +607,7 @@ void analisadorLexico() {
     }
     // cout << lex << endl;
     // cout << "fim do lexema" << endl;
+    // cout << "fim caractere atual: " << (int)c << "=" << c<< endl;
 }
 
 /*
@@ -604,18 +618,19 @@ void analisadorLexico() {
 */
 void casaToken(int token_esperado) {
     if (reg.token == token_esperado) {
-        // cout << "token_esperado: " << token_esperado << " token encontrado: "
-        // << reg.token << "(" << reg.lexema << ")" << endl; cout << "Casa Token
-        // casou " << reg.lexema << " com TOKEN "
+        // cout << "token_esperado: " << token_esperado
+        //      << " token encontrado: " << reg.token << "(" << reg.lexema << ")"
+        //      << endl;
+        // cout << "Casa Token casou " << reg.lexema << " com TOKEN "
         //      << token_esperado << endl;
         analisadorLexico();
     } else {
-        // cout << "token_esperado: " << token_esperado << endl;
+        // cout << "token_esperado: " << token_esperado << " token lido: " << reg.token << "("<<reg.lexema<<")"<< endl;
         throw ERR_TOKEN;
     }
 }
 
-/* 
+/*
 ----------------------------------------------------
 Analisador Sintático
 Cada método a seguir representa um símbolo da gramática
@@ -629,6 +644,7 @@ void Exp();
 
 // F -> not F | "(" Exp ")" | CONST | ID [ "[" Exp "]" ]
 void F() {
+    // cout << "F --> " << endl;
     if (reg.token == TOKEN_NOT) {
         casaToken(TOKEN_NOT);
         F();
@@ -638,7 +654,7 @@ void F() {
         casaToken(TOKEN_FECHA_PAREN);
     } else if (reg.token == TOKEN_CONST) {
         casaToken(TOKEN_CONST);
-    } else if (reg.token == TOKEN_ID) {
+    } else {
         casaToken(TOKEN_ID);
         if (reg.token == TOKEN_ABRE_COLCH) {
             casaToken(TOKEN_ABRE_COLCH);
@@ -650,27 +666,26 @@ void F() {
 
 // T ->  F { ( * | / | % | and ) F }
 void T() {
-    if (reg.token == TOKEN_NOT || reg.token == TOKEN_ABRE_PAREN ||
-        reg.token == TOKEN_CONST || reg.token == TOKEN_ID) {
-        F();
-        while (reg.token == TOKEN_ASTER || reg.token == TOKEN_BARRA ||
-               reg.token == TOKEN_MOD || reg.token == TOKEN_AND) {
-            if (reg.token == TOKEN_ASTER) {
-                casaToken(TOKEN_ASTER);
-            } else if (reg.token == TOKEN_BARRA) {
-                casaToken(TOKEN_BARRA);
-            } else if (reg.token == TOKEN_MOD) {
-                casaToken(TOKEN_MOD);
-            } else {
-                casaToken(TOKEN_AND);
-            }
-            F();
+    // cout << "T --> " << endl;
+    F();
+    while (reg.token == TOKEN_ASTER || reg.token == TOKEN_BARRA ||
+           reg.token == TOKEN_MOD || reg.token == TOKEN_AND) {
+        if (reg.token == TOKEN_ASTER) {
+            casaToken(TOKEN_ASTER);
+        } else if (reg.token == TOKEN_BARRA) {
+            casaToken(TOKEN_BARRA);
+        } else if (reg.token == TOKEN_MOD) {
+            casaToken(TOKEN_MOD);
+        } else {
+            casaToken(TOKEN_AND);
         }
+        F();
     }
 }
 
 // ExpS -> [ + | - ] T { ( + | - | or ) T }
 void ExpS() {
+    // cout << "EXPS --> " << endl;
     if (reg.token == TOKEN_MAIS) {
         casaToken(TOKEN_MAIS);
     } else if (reg.token == TOKEN_MENOS) {
@@ -693,28 +708,25 @@ void ExpS() {
 
 // Exp -> ExpS [ ( = | > | < | <> | <= | >= ) ExpS ]
 void Exp() {
-    if (reg.token == TOKEN_NOT || reg.token == TOKEN_ABRE_PAREN ||
-        reg.token == TOKEN_CONST || reg.token == TOKEN_ID ||
-        reg.token == TOKEN_MAIS || reg.token == TOKEN_MENOS) {
-        ExpS();
-        if (reg.token == TOKEN_IGUAL || reg.token == TOKEN_MAIOR ||
-            reg.token == TOKEN_MENOR || reg.token == TOKEN_DIF ||
-            reg.token == TOKEN_MENOR_IGUAL || reg.token == TOKEN_MAIOR_IGUAL) {
-            if (reg.token == TOKEN_IGUAL) {
-                casaToken(TOKEN_IGUAL);
-            } else if (reg.token == TOKEN_MAIOR) {
-                casaToken(TOKEN_MAIOR);
-            } else if (reg.token == TOKEN_MENOR) {
-                casaToken(TOKEN_MENOR);
-            } else if (reg.token == TOKEN_DIF) {
-                casaToken(TOKEN_DIF);
-            } else if (reg.token == TOKEN_MENOR_IGUAL) {
-                casaToken(TOKEN_MENOR_IGUAL);
-            } else {
-                casaToken(TOKEN_MAIOR_IGUAL);
-            }
-            ExpS();
+    // cout << "EXP --> " << endl;
+    ExpS();
+    if (reg.token == TOKEN_IGUAL || reg.token == TOKEN_MAIOR ||
+        reg.token == TOKEN_MENOR || reg.token == TOKEN_DIF ||
+        reg.token == TOKEN_MENOR_IGUAL || reg.token == TOKEN_MAIOR_IGUAL) {
+        if (reg.token == TOKEN_IGUAL) {
+            casaToken(TOKEN_IGUAL);
+        } else if (reg.token == TOKEN_MAIOR) {
+            casaToken(TOKEN_MAIOR);
+        } else if (reg.token == TOKEN_MENOR) {
+            casaToken(TOKEN_MENOR);
+        } else if (reg.token == TOKEN_DIF) {
+            casaToken(TOKEN_DIF);
+        } else if (reg.token == TOKEN_MENOR_IGUAL) {
+            casaToken(TOKEN_MENOR_IGUAL);
+        } else {
+            casaToken(TOKEN_MAIOR_IGUAL);
         }
+        ExpS();
     }
 }
 
@@ -801,17 +813,13 @@ void CmdAtr() {
 void CmdRep() {
     casaToken(TOKEN_FOR);
     casaToken(TOKEN_ABRE_PAREN);
-    if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
-        reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
-        reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
-        reg.token == TOKEN_WRITELN) {
+    if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
+        reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
         CmdP();
         while (reg.token == TOKEN_VIRG) {
             casaToken(TOKEN_VIRG);
-            if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
-                reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
-                reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
-                reg.token == TOKEN_WRITELN) {
+            if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
+                reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
                 CmdP();
             }
         }
@@ -820,17 +828,13 @@ void CmdRep() {
     casaToken(TOKEN_PONTO_VIRG);
     Exp();
     casaToken(TOKEN_PONTO_VIRG);
-    if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
-        reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
-        reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
-        reg.token == TOKEN_WRITELN) {
+    if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
+        reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
         CmdP();
         while (reg.token == TOKEN_VIRG) {
             casaToken(TOKEN_VIRG);
-            if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
-                reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
-                reg.token == TOKEN_READLN || reg.token == TOKEN_WRITE ||
-                reg.token == TOKEN_WRITELN) {
+            if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
+                reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
                 CmdP();
             }
         }
@@ -945,8 +949,7 @@ void Prog() {
     BlocoCmd();
 }
 
-
-/* 
+/*
 ----------------------------------------------------
 Método principal
 Inicializa a tabela de tokens com os tokens e palavras reservadas
@@ -1001,7 +1004,7 @@ int main() {
     } catch (int err) {
         if (err == ERR_TOKEN) {
             cout << linha << endl
-                 << "token não esperado [" << reg.lexema << "].";
+                 << "token nao esperado [" << reg.lexema << "].";
         } else if (err == ERR_CHAR) {
             cout << linha << endl << "caractere invalido.";
         } else if (err == ERR_EOF) {
