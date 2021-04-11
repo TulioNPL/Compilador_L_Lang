@@ -1,73 +1,90 @@
+/*
+Implementação do Analisador Sintático e Léxico para a Linguagem L
+Disciplina Compiladores PUC-MG
+Professor Alexei Machado
+
+Grupo:
+Pedro Díógenes - 605549
+João Rene - 606821
+Tulio Nunes - 605286
+*/
+
 #include <bits/stdc++.h>
 
 #include <string>
 
 using namespace std;
 
-#define TOKEN_ID 1
-#define TOKEN_CONST 2
-#define TOKEN_IGUAL 3
-#define TOKEN_ATRIB 4
-#define TOKEN_ABRE_PAREN 5
-#define TOKEN_FECHA_PAREN 6
-#define TOKEN_MENOR 7
-#define TOKEN_MAIOR 8
-#define TOKEN_DIF 9
-#define TOKEN_MAIOR_IGUAL 10
-#define TOKEN_MENOR_IGUAL 11
-#define TOKEN_VIRG 12
-#define TOKEN_MAIS 13
-#define TOKEN_MENOS 14
-#define TOKEN_ASTER 15
-#define TOKEN_BARRA 16
-#define TOKEN_PONTO_VIRG 17
-#define TOKEN_ABRE_CHAVE 18
-#define TOKEN_FECHA_CHAVE 19
-#define TOKEN_MOD 20
-#define TOKEN_ABRE_COLCH 21
-#define TOKEN_FECHA_COLCH 22
-#define TOKEN_EOF 23
-#define TOKEN_FINAL 24
-#define TOKEN_INT 25
-#define TOKEN_CHAR 26
-#define TOKEN_FOR 27
-#define TOKEN_IF 28
-#define TOKEN_TRUE 29
-#define TOKEN_ELSE 30
-#define TOKEN_AND 31
-#define TOKEN_OR 32
-#define TOKEN_NOT 33
-#define TOKEN_THEN 34
-#define TOKEN_READLN 35
-#define TOKEN_FALSE 36
-#define TOKEN_WRITE 37
-#define TOKEN_WRITELN 38
-#define TOKEN_MAIN 39
-#define TOKEN_BOOL 40
+// Definição/numeração dos tokens da linguagem.
 
-// definição de errors
-#define ERR_CHAR -1
-#define ERR_EOF -2
-#define ERR_TOKEN -3
+#define TOKEN_ID 1 // identificadores
+#define TOKEN_CONST 2 // constantes
+#define TOKEN_IGUAL 3 // =
+#define TOKEN_ATRIB 4 // :-
+#define TOKEN_ABRE_PAREN 5 // (
+#define TOKEN_FECHA_PAREN 6 // )
+#define TOKEN_MENOR 7 // <
+#define TOKEN_MAIOR 8 // >
+#define TOKEN_DIF 9 // <>
+#define TOKEN_MAIOR_IGUAL 10 // >=
+#define TOKEN_MENOR_IGUAL 11 // <=
+#define TOKEN_VIRG 12 // ,
+#define TOKEN_MAIS 13 // +
+#define TOKEN_MENOS 14 // -
+#define TOKEN_ASTER 15 // *
+#define TOKEN_BARRA 16 // /
+#define TOKEN_PONTO_VIRG 17 // ;
+#define TOKEN_ABRE_CHAVE 18 // {
+#define TOKEN_FECHA_CHAVE 19 // }
+#define TOKEN_MOD 20 // %
+#define TOKEN_ABRE_COLCH 21 // [
+#define TOKEN_FECHA_COLCH 22 // ]
+#define TOKEN_EOF 23 // EOF ou -1
+#define TOKEN_FINAL 24 // final
+#define TOKEN_INT 25 // int
+#define TOKEN_CHAR 26 // char
+#define TOKEN_FOR 27 // for
+#define TOKEN_IF 28 // if
+#define TOKEN_TRUE 29 // true
+#define TOKEN_ELSE 30 // else
+#define TOKEN_AND 31 // and
+#define TOKEN_OR 32 // or
+#define TOKEN_NOT 33 // not
+#define TOKEN_THEN 34 // then
+#define TOKEN_READLN 35 // readln
+#define TOKEN_FALSE 36 // false
+#define TOKEN_WRITE 37 // write
+#define TOKEN_WRITELN 38 // writeln
+#define TOKEN_MAIN 39 // main
+#define TOKEN_BOOL 40 // boolean
 
+// definição de erros para o analisador
+#define ERR_CHAR -1 // usado para erro de caractere não esperado
+#define ERR_EOF -2 // usado para erro de EOF nao esperado
+#define ERR_TOKEN -3 // usado para erro de token não esperado
+
+// Definição da estrutura dos símbolos para serem inseridos na tabela de símbolos
 struct Simbolo {
     string lexema;
     int token;
 };
 
+// definição da estrutura do registro léxico para o retorno do analisador léxico
 struct RegLex {
     string lexema;
     int token;
     int posicao;
     string tipo;
     size_t tamanho;
-};  // registro léxico
+}; 
 
+// caracteres aceitos pelo compilador para verificação de caracteres invalidos
 string alfabeto = "_.,;:(){}[]+-/%@!?><=*";
 
 // iniciando o registro lexico variável global
 RegLex reg;
 
+// classe da tabela de simbolos
 class TabelaSimbolos {
     int num_posicoes;
 
@@ -87,6 +104,7 @@ TabelaSimbolos::TabelaSimbolos(int n) {
     tabela = new list<Simbolo>[num_posicoes];
 }
 
+// retorna o token de um registro da tabela de símbolos
 int TabelaSimbolos::getToken(string lex, int pos) {
     list<Simbolo>::iterator i;
     for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
@@ -97,6 +115,7 @@ int TabelaSimbolos::getToken(string lex, int pos) {
     return -1;
 }
 
+// apenas para teste, mostra a tabela de símbolos inteira
 void TabelaSimbolos::mostrar() {
     for (int i = 0; i < num_posicoes; i++) {
         cout << i;
@@ -108,6 +127,7 @@ void TabelaSimbolos::mostrar() {
     }
 }
 
+// insere um registro na tabela de símbolos e retorna sua posição
 int TabelaSimbolos::inserir(string lex, int token) {
     Simbolo s = {lex, token};
     int pos = hash(lex);
@@ -115,6 +135,9 @@ int TabelaSimbolos::inserir(string lex, int token) {
     return pos;
 }
 
+// pesquisa se existe uma entrada na tabela de símbolos
+// a tabela é encadeada para evitar colisões
+// retorna a posição, caso encontrado, e -1 caso contrário
 int TabelaSimbolos::pesquisar(string lex) {
     // Pega a posicao inicial
     int pos = -1;
@@ -138,6 +161,8 @@ int TabelaSimbolos::pesquisar(string lex) {
     return pos;
 }
 
+// função de hash: multiplica o valor do char de cada posição do lexema pelo indice da sua posição na string
+// então pega o resultado dessa soma mod numero de posições da tabela
 int TabelaSimbolos::hash(string lex) {
     int soma = 0;
     int pos;
@@ -183,8 +208,17 @@ void atualizarTabela(string lex, string tipo, int token, size_t tamanho) {
     }
 }
 
+// iniciando a contagem de linhas para a mensagem de resultado ou de erro
 int linha = 1;
 
+/* 
+----------------------------------------------------
+Analisador Léxico
+Automato feito por meio de um switch case simples
+Cada case é um estado do automato
+Preenche a tabela de símbolos e o registro léxico a cada chamada
+----------------------------------------------------
+*/
 void analisadorLexico() {
     // limpa o registro léxico
     reg.lexema = "";
@@ -193,18 +227,10 @@ void analisadorLexico() {
     reg.token = 0;
     reg.tamanho = 0;
 
+    // c = caractere lido
+    // S = estado do automato
     char c;
     int S = 0;
-
-    /*
-        feito:  cases
-                inserção de token ID
-
-        falta:  elses (erros lexicos e EOF)
-                demais tokens
-
-
-    */
 
     // criando variaveis para criação do reglex e do token
     string lex = "";
@@ -213,9 +239,15 @@ void analisadorLexico() {
     int pos = -1;
     size_t tamanho = 0;
 
+    // S = 1 é o estado final, então o automato roda até chegar nele
     while (S != 1) {
         // cout << "caractere atual: " << (int)c << endl;
 
+        /* 
+        verifica se o caractere lido é fim de arquivo
+        se for, retorna o token do fim de arquivo para o registro léxico
+        se não, verifica se o caractere é valido.
+        */
         if (c != EOF) {
             c = cin.get();
             if (!(c == ' ' || c == '\n' || c == '\r' || c == '\t' ||
@@ -299,10 +331,9 @@ void analisadorLexico() {
 
             case 1:
                 S = 0;
-
                 // Aceita token
                 break;
-            case 2:
+            case 2: // IDENTIFICADORES 
                 S = 0;
                 if (c == '_') {
                     S = 2;
@@ -322,7 +353,7 @@ void analisadorLexico() {
                     throw lex;
                 }
                 break;
-            case 3:
+            case 3: // IDENTIFICADORES 
                 if (c == '_' || (c >= 'a' && c <= 'z') ||
                     (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
                     S = 3;
@@ -333,7 +364,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 4:
+            case 4: // CHAR
                 if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
                     (c >= '0' && c <= '9')) {
                     lex += c;
@@ -349,7 +380,7 @@ void analisadorLexico() {
                     throw lex;
                 }
                 break;
-            case 5:
+            case 5: // CHAR
                 if (c == '\'') {
                     lex += c;
                     tamanho = lex.size();
@@ -366,7 +397,7 @@ void analisadorLexico() {
                     throw lex;
                 }
                 break;
-            case 6:
+            case 6: // INTS OU CHARS HEXADECIMAIS 
                 if (c >= '0' && c <= '9') {
                     lex += c;
                     S = 9;
@@ -382,7 +413,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 7:
+            case 7: //CHARS HEXADECIMAIS 
                 if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') ||
                     (c >= '0' && c <= '9')) {
                     lex += c;
@@ -398,7 +429,7 @@ void analisadorLexico() {
                     throw lex;
                 }
                 break;
-            case 8:
+            case 8: //CHARS HEXADECIMAIS 
                 if (c == 'h') {
                     lex += c;
                     tamanho = lex.size();
@@ -413,7 +444,7 @@ void analisadorLexico() {
                     throw lex;
                 }
                 break;
-            case 9:
+            case 9: // INTS OU CHARS HEXADECIMAIS 
                 if (c >= '0' && c <= '9') {
                     lex += c;
                     S = 10;
@@ -428,7 +459,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 10:
+            case 10: // INTS OU CHARS HEXADECIMAIS 
                 if (c == 'h') {
                     tipo = "char";
                     lex += c;
@@ -446,7 +477,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 11:
+            case 11: // INTS 
                 if (c >= '0' && c <= '9') {
                     lex += c;
                     S = 11;
@@ -457,7 +488,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 12:
+            case 12: // :=
                 if (c == '=') {
                     lex += c;
                     atualizarTabela(lex, tipo, tok, tamanho);
@@ -473,7 +504,7 @@ void analisadorLexico() {
                     throw lex;
                 }
                 break;
-            case 13:
+            case 13: // <> ou <= 
                 if (c == '>' || c == '=') {
                     lex += c;
                     atualizarTabela(lex, tipo, tok, tamanho);
@@ -484,7 +515,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 14:
+            case 14: // >=
                 if (c == '=') {
                     lex += c;
                     atualizarTabela(lex, tipo, tok, tamanho);
@@ -495,7 +526,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
-            case 15:
+            case 15: // STRINGS
                 if (c != '\"' && c != '$' && c != '\n' && c != EOF) {
                     lex += c;
                     S = 15;
@@ -515,7 +546,7 @@ void analisadorLexico() {
                     throw lex;
                 }
                 break;
-            // case 16:
+            // case 16: // REMOVIDO DO AUTOMATO
             //     if (c != '\"' && c != '$' && c != '\n' && c != EOF) {
             //         lex += c;
             //         S = 16;
@@ -528,7 +559,7 @@ void analisadorLexico() {
             //         S = 0;
             //     }
             //     break;
-            case 17:
+            case 17: // comentário
                 if (c == '*') {
                     lex += c;
                     S = 18;
@@ -565,17 +596,12 @@ void analisadorLexico() {
     // cout << "fim do lexema" << endl;
 }
 
-// void casaToken(int token_esperado) {
-//     if (reg.token == token_esperado) {
-//         cout << "Casa Token casou " << reg.lexema << " com TOKEN "
-//              << token_esperado << endl;
-//         analisadorLexico();
-//     } else {
-//         cout << linha << endl << "token não esperado [" << reg.lexema <<
-//         "]."; ERR = true;
-//     }
-// }
-
+/*
+    método casa token
+    recebe um token e compara com o token do registro léxico
+    se for igual, chama o analisador léxico novamente
+    se não, retorna erro de token não esperado
+*/
 void casaToken(int token_esperado) {
     if (reg.token == token_esperado) {
         // cout << "token_esperado: " << token_esperado << " token encontrado: "
@@ -588,6 +614,14 @@ void casaToken(int token_esperado) {
         throw ERR_TOKEN;
     }
 }
+
+/* 
+----------------------------------------------------
+Analisador Sintático
+Cada método a seguir representa um símbolo da gramática
+Os comentários representam o símbolo representado pelo método
+----------------------------------------------------
+*/
 
 /* pré declarando a função Exp() para o compilador aceitar
  as demais funções declaradas posteriormente */
@@ -683,15 +717,6 @@ void Exp() {
         }
     }
 }
-
-// void Prog(){
-//     if (reg.token == TOKEN_INT){
-//         cout << "Token INT encontrado" << endl;
-//         analisadorLexico();
-//         cout << "Proximo token: " << reg.lexema << " → numero do token: " <<
-//         reg.token << endl;
-//     }
-// }
 
 // Dec -> ( int | boolean | char ) ID [:= [-]CONST | "[" CONST "]"] {, ID [:=
 // [-]CONST | "[" CONST "]"] } ; | final ID = [-]CONST ;
@@ -920,6 +945,14 @@ void Prog() {
     BlocoCmd();
 }
 
+
+/* 
+----------------------------------------------------
+Método principal
+Inicializa a tabela de tokens com os tokens e palavras reservadas
+Executa os analisadores a partir do primeiro token recebido
+----------------------------------------------------
+*/
 int main() {
     // iniciando tabela de simbolos
     t.inserir("final", TOKEN_FINAL);
