@@ -59,16 +59,32 @@ using namespace std;
 #define TOKEN_MAIN 39         // main
 #define TOKEN_BOOL 40         // boolean
 
+// definição de classes e tipos
+#define CLASSE_VAR 101
+#define CLASSE_CONST 102
+
+#define TIPO_INT 103
+#define TIPO_CHAR 104
+#define TIPO_STRING 105
+#define TIPO_BOOLEAN 106
+#define TIPO_VAZIO 107
+
 // definição de erros para o analisador
 #define ERR_CHAR -1   // usado para erro de caractere não esperado
 #define ERR_EOF -2    // usado para erro de EOF nao esperado
 #define ERR_TOKEN -3  // usado para erro de token não esperado
+#define ERR_EXISTS -4 // usado para erro de id já declarado
+#define ERR_TIPO -5 // usado para erro de tipo nao compativel
+#define ERR_TAMANHO -6 //usado para erro de tamanho maior que o esperado
 
 // Definição da estrutura dos símbolos para serem inseridos na tabela de
 // símbolos
 struct Simbolo {
     string lexema;
     int token;
+    int tipo;
+    int classe;
+    int tamanho;
 };
 
 // definição da estrutura do registro léxico para o retorno do analisador léxico
@@ -76,7 +92,7 @@ struct RegLex {
     string lexema;
     int token;
     int posicao;
-    string tipo;
+    int tipo;
     size_t tamanho;
 };
 
@@ -98,6 +114,10 @@ class TabelaSimbolos {
     int pesquisar(string lex);
     int hash(string lex);
     int getToken(string lex, int pos);
+    int getTamanho(string lex, int pos);
+    int getTipo(string lex, int pos);
+    int getClasse(string lex, int pos);
+    void atualizar(string lex, int tipo, int tamanho, int classe);
     void mostrar();
 };
 
@@ -106,12 +126,58 @@ TabelaSimbolos::TabelaSimbolos(int n) {
     tabela = new list<Simbolo>[num_posicoes];
 }
 
+// metodo para atualizar tabela com os tipos dos identificadores
+void TabelaSimbolos::atualizar(string lex, int tipo, int tamanho, int classe){
+    int pos = pesquisar(lex);
+    list<Simbolo>::iterator i;
+    for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
+        if (!lex.compare(i->lexema)) {
+            i->tamanho = tamanho;
+            i->classe = classe;
+            i->tipo = tipo;
+        }
+    }
+}
+
 // retorna o token de um registro da tabela de símbolos
 int TabelaSimbolos::getToken(string lex, int pos) {
     list<Simbolo>::iterator i;
     for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
         if (!lex.compare(i->lexema)) {
             return i->token;
+        }
+    }
+    return -1;
+}
+
+//
+int TabelaSimbolos::getTamanho(string lex, int pos) {
+    list<Simbolo>::iterator i;
+    for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
+        if (!lex.compare(i->lexema)) {
+            return i->tamanho;
+        }
+    }
+    return -1;
+}
+
+//
+int TabelaSimbolos::getTipo(string lex, int pos) {
+    list<Simbolo>::iterator i;
+    for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
+        if (!lex.compare(i->lexema)) {
+            return i->tipo;
+        }
+    }
+    return -1;
+}
+
+//
+int TabelaSimbolos::getClasse(string lex, int pos) {
+    list<Simbolo>::iterator i;
+    for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
+        if (!lex.compare(i->lexema)) {
+            return i->classe;
         }
     }
     return -1;
@@ -131,7 +197,10 @@ void TabelaSimbolos::mostrar() {
 
 // insere um registro na tabela de símbolos e retorna sua posição
 int TabelaSimbolos::inserir(string lex, int token) {
-    Simbolo s = {lex, token};
+    Simbolo s = {};
+    s.lexema = lex;
+    s.token = token;
+    s.tipo = TIPO_VAZIO;
     int pos = hash(lex);
     tabela[pos].push_back(s);
     return pos;
@@ -183,7 +252,7 @@ int TabelaSimbolos::hash(string lex) {
 TabelaSimbolos t(127);
 
 // metodo para inserir token
-void atualizarTabela(string lex, string tipo, int token, size_t tamanho) {
+void atualizarTabela(string lex, int tipo, int token, size_t tamanho) {
     if (token == TOKEN_CONST) {
         // CONST NAO ENTRA NA TABELA
         reg.lexema = lex;
@@ -211,6 +280,7 @@ void atualizarTabela(string lex, string tipo, int token, size_t tamanho) {
     }
 }
 
+
 // iniciando a contagem de linhas para a mensagem de resultado ou de erro
 int linha = 1;
 
@@ -229,7 +299,7 @@ void analisadorLexico() {
     // limpa o registro léxico
     reg.lexema = "";
     reg.posicao = -1;
-    reg.tipo = "";
+    reg.tipo = 0;
     reg.token = 0;
     reg.tamanho = 0;
 
@@ -240,7 +310,7 @@ void analisadorLexico() {
 
     // criando variaveis para criação do reglex e do token
     string lex = "";
-    string tipo = "";
+    int tipo = 0;
     int tok = 0;
     int pos = -1;
     size_t tamanho = 0;
@@ -283,7 +353,7 @@ void analisadorLexico() {
                     lex += c;
                 } else if (c == '\'') {
                     tok = TOKEN_CONST;
-                    tipo = "char";
+                    tipo = TIPO_CHAR;
                     lex += c;
                     S = 4;
                 } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
@@ -292,7 +362,7 @@ void analisadorLexico() {
                     lex += c;
                 } else if (c >= '1' && c <= '9') {
                     tok = TOKEN_CONST;
-                    tipo = "int";
+                    tipo = TIPO_INT;
                     S = 11;
                     lex += c;
                 } else if (c == '0') {
@@ -301,7 +371,7 @@ void analisadorLexico() {
                     S = 6;
                 } else if (c == '=' || c == '+' || c == '*' || c == '[' ||
                            c == '-' || c == ']' || c == '(' || c == ')' ||
-                           c == '{' || c == '}' || c == '.' || c == ';' ||
+                           c == '{' || c == '}' || c == ';' ||
                            c == ',' || c == '%') {
                     lex += c;
                     atualizarTabela(lex, tipo, tok, tamanho);
@@ -318,7 +388,7 @@ void analisadorLexico() {
                 } else if (c == '\"') {
                     tok = TOKEN_CONST;
                     lex += c;
-                    tipo = "string";
+                    tipo = TIPO_STRING;
                     S = 15;
                 } else if (c == '/') {
                     S = 17;
@@ -404,11 +474,11 @@ void analisadorLexico() {
                     lex += c;
                     S = 9;
                 } else if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
-                    tipo = "char";
+                    tipo = TIPO_CHAR;
                     lex += c;
                     S = 7;
                 } else {
-                    tipo = "int";
+                    tipo = TIPO_INT;
                     tamanho = lex.size();
                     atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
@@ -451,7 +521,7 @@ void analisadorLexico() {
                     lex += c;
                     S = 10;
                 } else if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
-                    tipo = "char";
+                    tipo = TIPO_CHAR;
                     lex += c;
                     S = 8;
                 } else {
@@ -463,13 +533,13 @@ void analisadorLexico() {
                 break;
             case 10:  // INTS OU CHARS HEXADECIMAIS
                 if (c == 'h') {
-                    tipo = "char";
+                    tipo = TIPO_CHAR;
                     lex += c;
                     tamanho = lex.size();
                     atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
                 } else if (c >= '0' && c <= '9') {
-                    tipo = "int";
+                    tipo = TIPO_INT;
                     lex += c;
                     S = 11;
                 } else {
@@ -733,49 +803,152 @@ void Exp() {
 // Dec -> ( int | boolean | char ) ID [:= [-]CONST | "[" CONST "]"] {, ID [:=
 // [-]CONST | "[" CONST "]"] } ; | final ID = [-]CONST ;
 void Dec() {
+    // iniciando variaveis regra DEC
+    int dec_tipo, dec_classe;
+    int id_tipo, id_classe, id_pos, id_tamanho;
+    string id_lex;
+    int const_tipo, const_tam; 
+    string const_val;
+
     if (reg.token == TOKEN_FINAL) {
+        dec_classe = CLASSE_CONST;
         casaToken(TOKEN_FINAL);
+        // retorna os dados do identificador lido
+        id_pos = reg.posicao;
+        id_lex = reg.lexema;
+        id_tamanho = t.getTamanho(id_lex, id_pos);
+        id_tipo = t.getTipo(id_lex, id_pos);
+        id_classe = t.getClasse(id_lex, id_pos);
+        // cout << "id " << id_lex << " possui tipo " << id_tipo;
+        //verifica a unicidade
+        if(id_tipo != TIPO_VAZIO){
+            throw ERR_EXISTS;
+        } else {
+            id_classe = dec_classe;
+        }
         casaToken(TOKEN_ID);
         casaToken(TOKEN_IGUAL);
         if (reg.token == TOKEN_MENOS) {
             casaToken(TOKEN_MENOS);
         }
+        // retorna os dados da constante
+        const_val = reg.lexema;
+        const_tipo = reg.tipo;
+        const_tam = reg.tamanho;
+        id_tipo = const_tipo;
         casaToken(TOKEN_CONST);
         casaToken(TOKEN_PONTO_VIRG);
+        t.atualizar(id_lex, id_tipo, id_tamanho, id_classe);
     } else {
         if (reg.token == TOKEN_INT) {
+            dec_tipo = TIPO_INT;
+            dec_classe = CLASSE_VAR;
             casaToken(TOKEN_INT);
         } else if (reg.token == TOKEN_CHAR) {
+            dec_tipo = TIPO_CHAR;
+            dec_classe = CLASSE_VAR;
             casaToken(TOKEN_CHAR);
         } else {
+            dec_tipo = TIPO_BOOLEAN;
+            dec_classe = CLASSE_VAR;
             casaToken(TOKEN_BOOL);
         }
+
+        // retorna os dados do identificador lido
+        id_pos = reg.posicao;
+        id_lex = reg.lexema;
+        id_tamanho = t.getTamanho(id_lex, id_pos);
+        id_tipo = t.getTipo(id_lex, id_pos);
+        id_classe = t.getClasse(id_lex, id_pos);
+        // cout << "id " << id_lex << " possui tipo " << id_tipo;
+        //verifica a unicidade
+        if(id_tipo != TIPO_VAZIO){
+            throw ERR_EXISTS;
+        } else { 
+            id_tipo = dec_tipo;
+            id_classe = dec_classe;
+        }
+
         casaToken(TOKEN_ID);
         if (reg.token == TOKEN_ATRIB) {
             casaToken(TOKEN_ATRIB);
             if (reg.token == TOKEN_MENOS) {
                 casaToken(TOKEN_MENOS);
             }
+            // retorna os dados da constante
+            const_val = reg.lexema;
+            const_tipo = reg.tipo;
+            const_tam = reg.tamanho;
+            // cout << const_val << const_tipo << const_tam << endl;
+            // verifica compatibilidade
+            if(id_tipo != const_tipo){ // INCOMPLETO
+                throw ERR_TIPO;
+            }
             casaToken(TOKEN_CONST);
+
         } else if (reg.token == TOKEN_ABRE_COLCH) {
             casaToken(TOKEN_ABRE_COLCH);
+            // retorna os dados da constante
+            const_val = reg.lexema;
+            const_tipo = reg.tipo;
+            const_tam = reg.tamanho;
+            // cout << const_val << const_tipo << const_tam << endl;
+            // verifica tamanho do vetor
+            if(stoi(const_val) > 8000){ //INCOMPLETO
+                throw ERR_TAMANHO;
+            }
             casaToken(TOKEN_CONST);
             casaToken(TOKEN_FECHA_COLCH);
         }
+        t.atualizar(id_lex, id_tipo, id_tamanho, id_classe);
         while (reg.token == TOKEN_VIRG) {
             casaToken(TOKEN_VIRG);
+            // retorna os dados do identificador lido
+            id_pos = reg.posicao;
+            id_lex = reg.lexema;
+            id_tamanho = t.getTamanho(id_lex, id_pos);
+            id_tipo = t.getTipo(id_lex, id_pos);
+            id_classe = t.getClasse(id_lex, id_pos);
+            // cout << "id " << id_lex << " possui tipo " << id_tipo;
+
+            //verifica a unicidade
+            if(id_tipo != TIPO_VAZIO){
+                throw ERR_EXISTS;
+            } else { 
+                id_tipo = dec_tipo;
+                id_classe = dec_classe;
+            }
             casaToken(TOKEN_ID);
             if (reg.token == TOKEN_ATRIB) {
                 casaToken(TOKEN_ATRIB);
                 if (reg.token == TOKEN_MENOS) {
                     casaToken(TOKEN_MENOS);
                 }
+                // retorna os dados da constante
+                const_val = reg.lexema;
+                const_tipo = reg.tipo;
+                const_tam = reg.tamanho;
+                // cout << const_val << const_tipo << const_tam << endl;
+                // verifica compatibilidade
+                if(id_tipo != const_tipo){ // INCOMPLETO
+                    throw ERR_TIPO;
+                }
                 casaToken(TOKEN_CONST);
             } else if (reg.token == TOKEN_ABRE_COLCH) {
                 casaToken(TOKEN_ABRE_COLCH);
+                // retorna os dados da constante
+                const_val = reg.lexema;
+                const_tipo = reg.tipo;
+                const_tam = reg.tamanho;
+                // cout << const_val << const_tipo << const_tam << endl;
+                // verifica tamanho do vetor
+                if(stoi(const_val) >= 8000){ //INCOMPLETO
+                    throw ERR_TAMANHO;
+                }
                 casaToken(TOKEN_CONST);
                 casaToken(TOKEN_FECHA_COLCH);
             }
+            t.atualizar(id_lex, id_tipo, id_tamanho, id_classe);
         }
         casaToken(TOKEN_PONTO_VIRG);
     }
@@ -1002,13 +1175,24 @@ int main() {
         Prog();
         casaToken(TOKEN_EOF);
     } catch (int err) {
-        if (err == ERR_TOKEN) {
-            cout << linha << endl
-                 << "token nao esperado [" << reg.lexema << "].";
-        } else if (err == ERR_CHAR) {
-            cout << linha << endl << "caractere invalido.";
-        } else if (err == ERR_EOF) {
-            cout << linha << endl << "fim de arquivo nao esperado.";
+        switch(err){
+            case ERR_TOKEN:
+                cout << linha << endl << "token nao esperado [" << reg.lexema << "].";
+                break;
+            case ERR_EOF:
+                cout << linha << endl << "fim de arquivo nao esperado.";
+                break;
+            case ERR_CHAR:
+                cout << linha << endl << "caractere invalido.";
+                break;
+            case ERR_TIPO:
+                cout << linha << endl << "tipos incompativeis.";
+                break;
+            case ERR_TAMANHO:
+                cout << linha << endl << "tamanho do vetor excede o maximo permitido.";
+                break;
+            case ERR_EXISTS:
+                cout << linha << endl << "identificador ja declarado [" << reg.lexema << "].";
         }
         return 0;
     } catch (string err) {
