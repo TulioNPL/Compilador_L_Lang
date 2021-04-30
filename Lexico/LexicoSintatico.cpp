@@ -680,6 +680,24 @@ void analisadorLexico() {
     // cout << "fim caractere atual: " << (int)c << "=" << c<< endl;
 }
 
+boolean verificaCompatib(int tipo1, int tipo2){
+    if((tipo1 == TIPO_INT && tipo2 == TIPO_INT) 
+        || (tipo1 == TIPO_CHAR && tipo2 == TIPO_CHAR)
+        || (tipo1 == TIPO_BOOLEAN && tipo2 == TIPO_BOOLEAN)){
+        return true;
+    }
+        return false;
+}
+
+boolean verificaTamanho(int size, int tipo){
+    if(tipo == TIPO_INT){
+        if(size*2 <= 8000) return true;
+    } else {
+        if(size <= 8000) return true;
+    }
+    return false;
+}
+
 /*
     método casa token
     recebe um token e compara com o token do registro léxico
@@ -881,7 +899,7 @@ void Dec() {
             const_tam = reg.tamanho;
             // cout << const_val << const_tipo << const_tam << endl;
             // verifica compatibilidade
-            if(id_tipo != const_tipo){ // INCOMPLETO
+            if(verificaCompatib(id_tipo, const_tipo)){ // INCOMPLETO
                 throw ERR_TIPO;
             }
             casaToken(TOKEN_CONST);
@@ -894,7 +912,7 @@ void Dec() {
             const_tam = reg.tamanho;
             // cout << const_val << const_tipo << const_tam << endl;
             // verifica tamanho do vetor
-            if(stoi(const_val) > 8000){ //INCOMPLETO
+            if(verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
                 throw ERR_TAMANHO;
             }
             casaToken(TOKEN_CONST);
@@ -930,7 +948,7 @@ void Dec() {
                 const_tam = reg.tamanho;
                 // cout << const_val << const_tipo << const_tam << endl;
                 // verifica compatibilidade
-                if(id_tipo != const_tipo){ // INCOMPLETO
+                if(verificaCompatib(id_tipo, const_tipo)){ // INCOMPLETO
                     throw ERR_TIPO;
                 }
                 casaToken(TOKEN_CONST);
@@ -942,7 +960,7 @@ void Dec() {
                 const_tam = reg.tamanho;
                 // cout << const_val << const_tipo << const_tam << endl;
                 // verifica tamanho do vetor
-                if(stoi(const_val) >= 8000){ //INCOMPLETO
+                if(verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
                     throw ERR_TAMANHO;
                 }
                 casaToken(TOKEN_CONST);
