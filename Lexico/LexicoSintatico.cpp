@@ -74,8 +74,10 @@ using namespace std;
 #define ERR_EOF -2    // usado para erro de EOF nao esperado
 #define ERR_TOKEN -3  // usado para erro de token não esperado
 #define ERR_EXISTS -4 // usado para erro de id já declarado
-#define ERR_TIPO -5 // usado para erro de tipo nao compativel
-#define ERR_TAMANHO -6 //usado para erro de tamanho maior que o esperado
+#define ERR_NOT_EXISTS -5 // usado para erro de id não declarado
+#define ERR_TIPO -6 // usado para erro de tipo nao compativel
+#define ERR_TAMANHO -7 //usado para erro de tamanho maior que o esperado
+#define ERR_CLASSE -8 // usado para erro de classe errada
 
 // Definição da estrutura dos símbolos para serem inseridos na tabela de
 // símbolos
@@ -680,17 +682,47 @@ void analisadorLexico() {
     // cout << "fim caractere atual: " << (int)c << "=" << c<< endl;
 }
 
-boolean verificaCompatib(int tipo1, int tipo2){
-    if((tipo1 == TIPO_INT && tipo2 == TIPO_INT) 
-        || (tipo1 == TIPO_CHAR && tipo2 == TIPO_CHAR)
-        || (tipo1 == TIPO_BOOLEAN && tipo2 == TIPO_BOOLEAN)){
+bool verificaCompatibDec(int id_tipo, int const_tipo){
+    if((id_tipo == TIPO_INT && const_tipo == TIPO_INT) 
+        || (id_tipo == TIPO_CHAR && const_tipo == TIPO_CHAR)
+        || (id_tipo == TIPO_BOOLEAN && const_tipo == 0)){
         return true;
     }
         return false;
 }
 
-boolean verificaTamanho(int size, int tipo){
-    if(tipo == TIPO_INT){
+// int -> int[]
+// int[] -> int
+// int -> int
+
+// char id -> string
+// char id -> char id
+// char[] -> char
+// char -> char
+
+// boolean -> boolean
+// boolean[] -> boolean
+// boolean -> boolean[]
+
+bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tamanho){
+    if(id_tipo == TIPO_INT){
+        //confere se os inteiros manipulados sao escalares
+        if(exp_tipo == TIPO_INT && id_tamanho == 0 && exp_tamanho == 0) return true;
+    } else if (id_tipo == TIPO_CHAR){
+        if(id_tamanho > 0) { // se ID for vetor
+            if(exp_tipo == TIPO_STRING && exp_tamanho <= (id_tamanho-1)) return true;
+            else if(exp_tipo == TIPO_CHAR && exp_tamanho <= id_tamanho) return true; 
+        } else { // se ID for escalar
+            if(exp_tipo == TIPO_CHAR && exp_tamanho == 0) return true;
+        }
+    } else if (id_tipo == TIPO_BOOLEAN) {
+        //confere se os boolean manipulados sao escalares
+        if(exp_tipo == TIPO_BOOLEAN && id_tamanho == 0 && exp_tamanho == 0) return true;
+    }
+}
+
+bool verificaTamanho(int size, int tipo){
+    if(tipo == TIPO_INT || tipo == TIPO_BOOLEAN){
         if(size*2 <= 8000) return true;
     } else {
         if(size <= 8000) return true;
@@ -728,34 +760,80 @@ Os comentários representam o símbolo representado pelo método
 
 /* pré declarando a função Exp() para o compilador aceitar
  as demais funções declaradas posteriormente */
-void Exp();
+void Exp(int &exp_tipo, int &exp_tamanho);
 
 // F -> not F | "(" Exp ")" | CONST | ID [ "[" Exp "]" ]
-void F() {
+
+// F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
+
+// (1) { se (f1.tipo != boolean) entao ERRO }
+// (2) { f.tipo = exp.tipo; f.tamanho = exp.tamanho }
+// (3) { f.tipo = const.tipo }
+// (4) { f.tipo = id.tipo; f.tamanho = id.tamanho }
+// (5) { se (exp.tipo != inteiro || exp.tamanho > 0) entao ERRO; f.tamanho = 0 }
+void F(int &f_tipo, int &f_tamanho) {
     // cout << "F --> " << endl;
+
+    int f1_tipo, f1_tamanho; 
+    int exp_tipo, exp_tamanho;
+    int const_tipo, const_tamanho, id_tipo, id_tamanho;
+
     if (reg.token == TOKEN_NOT) {
         casaToken(TOKEN_NOT);
-        F();
+        F(f1_tipo, f1_tamanho);
+        if(f1_tipo != TIPO_BOOLEAN){
+            throw ERR_TIPO;
+        }
     } else if (reg.token == TOKEN_ABRE_PAREN) {
         casaToken(TOKEN_ABRE_PAREN);
-        Exp();
+        Exp(exp_tipo, exp_tamanho);
+        f_tipo = exp_tipo;
+        f_tamanho = exp_tamanho;
         casaToken(TOKEN_FECHA_PAREN);
     } else if (reg.token == TOKEN_CONST) {
+        const_tipo = reg.tipo;
+        const_tamanho = reg.tamanho;
+        f_tipo = const_tipo;
+        f_tamanho = const_tamanho; // consertar
         casaToken(TOKEN_CONST);
     } else {
+        int id_pos, id_tipo;
+        string id_lex;
+        id_pos = reg.posicao;
+        id_lex = reg.lexema;
+        id_tipo = t.getTipo(id_lex, id_pos);
+        id_tamanho = t.getTamanho(id_lex, id_pos);
+        f_tipo = id_tipo;
+        f_tamanho = id_tamanho;
         casaToken(TOKEN_ID);
         if (reg.token == TOKEN_ABRE_COLCH) {
             casaToken(TOKEN_ABRE_COLCH);
-            Exp();
+            Exp(exp_tipo, exp_tamanho);
+            if((exp_tipo != TIPO_INT) || exp_tamanho > 0){
+                throw ERR_TIPO;
+            }
+            f_tamanho = 0;
             casaToken(TOKEN_FECHA_COLCH);
         }
     }
 }
 
 // T ->  F { ( * | / | % | and ) F }
-void T() {
+
+// T ->  F1 (1) { ( * (2) | / (3) | % (4) | and (5) ) F2 (6) }
+
+// (1) { t.tipo = f1.tipo }
+// (2) { t.op = mult }
+// (3) { t.op = div }
+// (4) { t.op = mod }
+// (5) { t.op = and; t.tipo = boolean }
+// (6) { se não(verificaOps) entao ERRO }
+void T(int &t_tipo, int &f_tamanho) {
     // cout << "T --> " << endl;
-    F();
+
+    int f1_tipo, f1_tamanho, f2_tipo, f2_tamanho;
+
+    F(f1_tipo, f1_tamanho);
     while (reg.token == TOKEN_ASTER || reg.token == TOKEN_BARRA ||
            reg.token == TOKEN_MOD || reg.token == TOKEN_AND) {
         if (reg.token == TOKEN_ASTER) {
@@ -767,12 +845,24 @@ void T() {
         } else {
             casaToken(TOKEN_AND);
         }
-        F();
+        F(f2_tipo, f2_tamanho);
     }
 }
 
 // ExpS -> [ + | - ] T { ( + | - | or ) T }
-void ExpS() {
+
+// ExpS -> [ + | - ] T1 (1) { ( + (2) | - (3) | or (4) ) T2 (5) }
+
+// (1) { exps.tipo = t1.tipo }
+// (2) { exps.op = add }
+// (3) { exps.op = sub }
+// (4) { exps.op = or; exps.tipo = boolean }
+// (5) { se nao(VerificaOps) entao ERRO }
+
+void ExpS(int &exps_tipo, int &exps_tamanho) {
+
+    int t1_tipo, t1_tamanho, t2_tipo, t2_tamanho;
+
     // cout << "EXPS --> " << endl;
     if (reg.token == TOKEN_MAIS) {
         casaToken(TOKEN_MAIS);
@@ -780,7 +870,7 @@ void ExpS() {
         casaToken(TOKEN_MENOS);
     }
 
-    T();
+    T(t1_tipo, t1_tamanho);
     while (reg.token == TOKEN_MAIS || reg.token == TOKEN_MENOS ||
            reg.token == TOKEN_OR) {
         if (reg.token == TOKEN_MAIS) {
@@ -790,14 +880,24 @@ void ExpS() {
         } else {
             casaToken(TOKEN_OR);
         }
-        T();
+        T(t2_tipo, t2_tamanho);
     }
 }
 
 // Exp -> ExpS [ ( = | > | < | <> | <= | >= ) ExpS ]
-void Exp() {
+// Exp -> ExpS1 (1) [ ( = | > | < | <> | <= | >= ) (2) ExpS2 (3) ]
+
+// (1) { exp_tipo = exps_tipo  }
+// (2) { exp_tipo = boolean }
+// (3) { se nao(VerificaOps) entao ERRO }
+void Exp(int &exp_tipo, int &exp_tamanho) {
     // cout << "EXP --> " << endl;
-    ExpS();
+
+    // declarando variaveis que serão necessarias para o semantico
+    int exps1_tipo, exps1_tamanho, exps2_tipo, exps2_tamanho;
+    int op;
+
+    ExpS(exps1_tipo, exps1_tamanho);
     if (reg.token == TOKEN_IGUAL || reg.token == TOKEN_MAIOR ||
         reg.token == TOKEN_MENOR || reg.token == TOKEN_DIF ||
         reg.token == TOKEN_MENOR_IGUAL || reg.token == TOKEN_MAIOR_IGUAL) {
@@ -814,7 +914,7 @@ void Exp() {
         } else {
             casaToken(TOKEN_MAIOR_IGUAL);
         }
-        ExpS();
+        ExpS(exps2_tipo, exps2_tamanho);
     }
 }
 
@@ -899,7 +999,7 @@ void Dec() {
             const_tam = reg.tamanho;
             // cout << const_val << const_tipo << const_tam << endl;
             // verifica compatibilidade
-            if(verificaCompatib(id_tipo, const_tipo)){ // INCOMPLETO
+            if(!verificaCompatibDec(id_tipo, const_tipo)){ // INCOMPLETO
                 throw ERR_TIPO;
             }
             casaToken(TOKEN_CONST);
@@ -912,7 +1012,7 @@ void Dec() {
             const_tam = reg.tamanho;
             // cout << const_val << const_tipo << const_tam << endl;
             // verifica tamanho do vetor
-            if(verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
+            if(!verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
                 throw ERR_TAMANHO;
             }
             casaToken(TOKEN_CONST);
@@ -948,7 +1048,7 @@ void Dec() {
                 const_tam = reg.tamanho;
                 // cout << const_val << const_tipo << const_tam << endl;
                 // verifica compatibilidade
-                if(verificaCompatib(id_tipo, const_tipo)){ // INCOMPLETO
+                if(!verificaCompatibDec(id_tipo, const_tipo)){ // INCOMPLETO
                     throw ERR_TIPO;
                 }
                 casaToken(TOKEN_CONST);
@@ -960,7 +1060,7 @@ void Dec() {
                 const_tam = reg.tamanho;
                 // cout << const_val << const_tipo << const_tam << endl;
                 // verifica tamanho do vetor
-                if(verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
+                if(!verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
                     throw ERR_TAMANHO;
                 }
                 casaToken(TOKEN_CONST);
@@ -989,19 +1089,56 @@ void BlocoCmd() {
 }
 
 // CmdAtr -> ID ["["Exp"]"] := Exp
+// CmdAtr -> ID (1)(2) ["[" Exp (3) "]"] := Exp1 (4)
+
+// (1) { if id.tipo == vazio then ERRO else atr.tipo = id_tipo; }
+// (2) { if id.classe == classe_const then ERRO }
+// (3) { se nao(exp.tipo == tipo_int) entao erro }
+// (4) { se (nao compativel(atr.tipo, exp1.tipo)) entao ERRO }
 void CmdAtr() {
+    int atr_tipo, exp1_tipo, exp1_tamanho, exp2_tipo, exp2_tamanho, id_tipo, id_tamanho, id_pos, id_classe; // variaveis necessarias para semantico
+    string id_lex;
+    
+    //verificando existencia do identificador
+    id_pos = reg.posicao;
+    id_lex = reg.lexema;
+    id_tipo = t.getTipo(id_lex, id_pos);
+    id_classe = t.getClasse(id_lex, id_pos);
+    id_tamanho = t.getTamanho(id_lex, id_pos);
+
+
+    if(id_tipo == TIPO_VAZIO){ // se tipo vazio, id não declarado
+        throw ERR_NOT_EXISTS;
+    } else { // senão, atribui tipo do id
+        atr_tipo = id_tipo;
+    }
+
+    if(id_classe == CLASSE_CONST) {
+        throw ERR_CLASSE;
+    }
+
     casaToken(TOKEN_ID);
     if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
-        Exp();
+        Exp(exp1_tipo, exp1_tamanho);
+
+        if(exp1_tipo != TIPO_INT){
+            throw ERR_TIPO;
+        }
+
         casaToken(TOKEN_FECHA_COLCH);
     }
     casaToken(TOKEN_ATRIB);
-    Exp();
+
+    Exp(exp2_tipo, exp2_tamanho);
+    if(!(verificaCompatibAtr(id_tipo, exp2_tipo, id_tamanho, exp2_tamanho))) throw ERR_TIPO;
 }
 
 // CmdRep -> for"(" [CmdP {, CmdP}]; Exp; [CmdP {, CmdP}] ")" (Cmd | BlocoCmd)
 void CmdRep() {
+
+    int exp_tipo, exp_tamanho;
+
     casaToken(TOKEN_FOR);
     casaToken(TOKEN_ABRE_PAREN);
     if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
@@ -1017,7 +1154,7 @@ void CmdRep() {
     }
 
     casaToken(TOKEN_PONTO_VIRG);
-    Exp();
+    Exp(exp_tipo, exp_tamanho);
     casaToken(TOKEN_PONTO_VIRG);
     if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
         reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
@@ -1044,9 +1181,12 @@ void CmdRep() {
 
 // CmdIf -> if"(" Exp ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
 void CmdIf() {
+
+    int exp_tipo, exp_tamanho;
+
     casaToken(TOKEN_IF);
     casaToken(TOKEN_ABRE_PAREN);
-    Exp();
+    Exp(exp_tipo, exp_tamanho);
     casaToken(TOKEN_FECHA_PAREN);
     casaToken(TOKEN_THEN);
 
@@ -1075,18 +1215,23 @@ void CmdIf() {
 void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
 // CmdRead -> readln "(" ID ["[" Exp "]"] ")"
 void CmdRead() {
+
+    int exp_tipo, exp_tamanho;
+
     casaToken(TOKEN_READLN);
     casaToken(TOKEN_ABRE_PAREN);
     casaToken(TOKEN_ID);
     if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
-        Exp();
+        Exp(exp_tipo, exp_tamanho);
         casaToken(TOKEN_FECHA_COLCH);
     }
     casaToken(TOKEN_FECHA_PAREN);
 }
 // CmdWrite -> (write|writeln)"(" Exp {, Exp} ")"
 void CmdWrite() {
+    int exp_tipo, exp1_tipo, exp_tamanho, exp1_tamanho;
+
     if (reg.token == TOKEN_WRITE) {
         casaToken(TOKEN_WRITE);
     } else {
@@ -1094,10 +1239,10 @@ void CmdWrite() {
     }
 
     casaToken(TOKEN_ABRE_PAREN);
-    Exp();
+    Exp(exp_tipo, exp_tamanho);
     while (reg.token == TOKEN_VIRG) {
         casaToken(TOKEN_VIRG);
-        Exp();
+        Exp(exp1_tipo, exp1_tamanho);
     }
     casaToken(TOKEN_FECHA_PAREN);
 }
@@ -1154,7 +1299,7 @@ int main() {
     t.inserir("char", TOKEN_CHAR);
     t.inserir("for", TOKEN_FOR);
     t.inserir("if", TOKEN_IF);
-    t.inserir("TRUE", TOKEN_TRUE);
+    t.inserir("TRUE", TOKEN_CONST);
     t.inserir("else", TOKEN_ELSE);
     t.inserir("and", TOKEN_AND);
     t.inserir("or", TOKEN_OR);
@@ -1178,7 +1323,7 @@ int main() {
     t.inserir("}", TOKEN_FECHA_CHAVE);
     t.inserir("then", TOKEN_THEN);
     t.inserir("readln", TOKEN_READLN);
-    t.inserir("FALSE", TOKEN_FALSE);
+    t.inserir("FALSE", TOKEN_CONST);
     t.inserir("write", TOKEN_WRITE);
     t.inserir("writeln", TOKEN_WRITELN);
     t.inserir("%", TOKEN_MOD);
@@ -1211,6 +1356,13 @@ int main() {
                 break;
             case ERR_EXISTS:
                 cout << linha << endl << "identificador ja declarado [" << reg.lexema << "].";
+                break;
+            case ERR_NOT_EXISTS:
+                cout << linha << endl << "identificador nao declarado [" << reg.lexema << "].";
+                break;
+            case ERR_CLASSE:
+                cout << linha << endl << "classe de identificador incompatível [" << reg.lexema << "].";
+                break;
         }
         return 0;
     } catch (string err) {
