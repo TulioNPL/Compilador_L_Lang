@@ -1,0 +1,65 @@
+Dec -> ( int (1)| boolean (2)| char (3)) ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8) {, ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8)} ; | final (7) ID (10) = [-]CONST (9) ; (8)
+
+(1) { Dec.tipo = inteiro; dec.classe = classe_var }
+(2) { Dec.tipo = boolean; dec.classe = classe_var }
+(3) { Dec.tipo = char; dec.classe = classe_var }
+(4) { se (id.tipo == vazio) entao {id.tipo = dec.tipo; id.classe = dec.classe} senao erro }
+(5) { se (nao compativel(dec.tipo, const.tipo)) entao erro }
+(6) { se (const.val <= 8kbytes) entao (id.tamanho = const.val) senao erro}
+(7) { Dec.classe = classe_const }
+(8) { atualizarTabelaSimbolos();}
+(9) { dec_tipo = const_tipo }
+(10) { se (id.tipo == vazio) entao {id.classe = dec.classe} senao erro }
+_______________________________________________________________________________________________________________________________________________________________________________________________________
+
+// F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
+
+// (1) { se (f1.tipo != boolean) entao ERRO; f.tipo = f1.tipo; f.valor = f1.valor; f.tamanho = f1.tamanho }
+// (2) { f.tipo = exp.tipo; f.tamanho = exp.tamanho; f.valor = exp.valor }
+// (3) { f.tipo = const.tipo; f.valor = const.valor;  se (const.tipo == inteiro) f.tamanho = 0 senao f.tamanho = const.tamanho }
+// (4) { f.tipo = id.tipo; f.tamanho = id.tamanho }
+// (5) { se (exp.tipo != inteiro || exp.tamanho > 0) entao ERRO; f.tamanho = exp.tamanho }
+
+
+
+
+// T ->  F1 (1) { ( * (2) | / (3) | % (4) | and (5) ) F2 (6) }
+
+// (1) { t.tipo = f1.tipo; t.tamanho = f1.tamanho }
+// (2) { t.op = mult }
+// (3) { t.op = div }
+// (4) { t.op = mod }
+// (5) { t.op = and; t.tipo = boolean }
+// (6) { se não(verificaOps) entao ERRO }
+
+
+
+
+// ExpS -> [ + | - ] T1 (1) { ( + (2) | - (3) | or (4) ) T2 (5) }
+
+// (1) { exps.tipo = t1.tipo; exps_tamanho = t1.tamanho }
+// (2) { exps.op = add }
+// (3) { exps.op = sub }
+// (4) { exps.op = or; exps.tipo = boolean }
+// (5) {verificaOps}
+
+
+
+// Exp -> ExpS1 (1) [ ( = | > | < | <> | <= | >= ) (2) ExpS2 (3) ]
+
+// (1) { exp_tipo = exps_tipo; exp.tamanho = exps.tamanho;  }
+// (2) { exp_tipo = boolean; exp.tamanho = 0 }
+// (3) { se nao(VerificaOps) entao ERRO }
+
+_______________________________________________________________________________________________________________________________________________________________________________________________________
+
+
+// CmdAtr -> ID (1)(2) ["[" Exp (3) "]"] := Exp1 (4)
+
+// (1) { if id.tipo == vazio then ERRO else atr.tipo = id_tipo; }
+// (2) { if id.classe == classe_const then ERRO }
+// (3) { se nao(exp.tipo == tipo_int) entao erro }
+// (4) { se (nao compativel(atr.tipo, exp1.tipo)) entao ERRO }
+_______________________________________________________________________________________________________________________________________________________________________________________________________
+
+
