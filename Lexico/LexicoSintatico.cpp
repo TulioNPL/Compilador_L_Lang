@@ -271,7 +271,6 @@ void atualizarTabela(string lex, int tipo, int token, size_t tamanho) {
         */
         int pos = t.pesquisar(lex);
         if (pos != -1) {
-            // cout << "já encontrou!" << endl;
             reg.posicao = pos;
             reg.token = t.getToken(lex, pos);
             reg.lexema = lex;
@@ -321,8 +320,6 @@ void analisadorLexico() {
 
     // S = 1 é o estado final, então o automato roda até chegar nele
     while (S != 1) {
-        // cout << "começo caractere atual: " << (int)c << "=" << c<< endl;
-
         /*
         verifica se o caractere lido é fim de arquivo
         se for, retorna o token do fim de arquivo para o registro léxico
@@ -400,8 +397,6 @@ void analisadorLexico() {
                 } else if (c == EOF) {
                     S = 0;
                 } else {
-                    // cout << S << endl;
-                    // cout << (int)c << " " << c << endl;
                     throw lex;
                     break;
                 }
@@ -411,6 +406,7 @@ void analisadorLexico() {
                 S = 0;
                 // Aceita token
                 break;
+
             case 2:  // IDENTIFICADORES
                 S = 0;
                 if (c == '_') {
@@ -425,11 +421,10 @@ void analisadorLexico() {
 
                     S = 0;
                 } else {
-                    // cout << S << endl;
-
                     throw lex;
                 }
                 break;
+
             case 3:  // IDENTIFICADORES
                 if (c == '_' || (c >= 'a' && c <= 'z') ||
                     (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
@@ -441,22 +436,19 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
+
             case 4:  // CHAR
-                // if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-                //     (c >= '0' && c <= '9')) {
                 if (c != EOF) {
                     lex += c;
                     S = 5;
                 } else if (c == EOF) {
                     throw ERR_EOF;
-
                     S = 0;
                 } else {
-                    // cout << S << endl;
-
                     throw lex;
                 }
                 break;
+
             case 5:  // CHAR
                 if (c == '\'') {
                     lex += c;
@@ -465,14 +457,12 @@ void analisadorLexico() {
                     S = 1;
                 } else if (c == EOF) {
                     throw ERR_EOF;
-
                     S = 0;
                 } else {
-                    // cout << S << endl;
-
                     throw lex;
                 }
                 break;
+
             case 6:  // INTS OU CHARS HEXADECIMAIS
                 if (c >= '0' && c <= '9') {
                     lex += c;
@@ -489,6 +479,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
+
             case 7:  // CHARS HEXADECIMAIS
                 if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') ||
                     (c >= '0' && c <= '9')) {
@@ -496,14 +487,12 @@ void analisadorLexico() {
                     S = 8;
                 } else if (c == EOF) {
                     throw ERR_EOF;
-
                     S = 0;
                 } else {
-                    // cout << S << endl;
-
                     throw lex;
                 }
                 break;
+
             case 8:  // CHARS HEXADECIMAIS
                 if (c == 'h') {
                     lex += c;
@@ -512,14 +501,12 @@ void analisadorLexico() {
                     S = 1;
                 } else if (c == EOF) {
                     throw ERR_EOF;
-
                     S = 0;
                 } else {
-                    // cout << S << endl;
-
                     throw lex;
                 }
                 break;
+
             case 9:  // INTS OU CHARS HEXADECIMAIS
                 if (c >= '0' && c <= '9') {
                     lex += c;
@@ -535,6 +522,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
+
             case 10:  // INTS OU CHARS HEXADECIMAIS
                 if (c == 'h') {
                     tipo = TIPO_CHAR;
@@ -553,6 +541,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
+
             case 11:  // INTS
                 if (c >= '0' && c <= '9') {
                     lex += c;
@@ -564,6 +553,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
+
             case 12:  // :=
                 if (c == '=') {
                     lex += c;
@@ -579,6 +569,7 @@ void analisadorLexico() {
                     throw lex;
                 }
                 break;
+
             case 13:  // <> ou <=
                 if (c == '>' || c == '=') {
                     lex += c;
@@ -590,6 +581,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
+
             case 14:  // >=
                 if (c == '=') {
                     lex += c;
@@ -601,13 +593,13 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
+
             case 15:  // STRINGS
                 if (c != '\"' && c != '$' && c != '\n' && c != EOF) {
                     lex += c;
                     S = 15;
                 } else if (c == EOF) {
                     throw ERR_EOF;
-
                     S = 0;
                 } else if (c == '\"') {
                     lex += c;
@@ -615,24 +607,10 @@ void analisadorLexico() {
                     atualizarTabela(lex, tipo, tok, tamanho);
                     S = 1;
                 } else {
-                    // cout << S << endl;
-
                     throw lex;
                 }
                 break;
-            // case 16: // REMOVIDO DO AUTOMATO
-            //     if (c != '\"' && c != '$' && c != '\n' && c != EOF) {
-            //         lex += c;
-            //         S = 16;
-            //     } else if (c == '\"') {
-            //         atualizarTabela(lex, tipo, tok);
-            //         S = 1;
-            //     } else if (c == EOF) {
-            //         cout << linha << endl << "fim de arquivo nao esperado.";
-            //
-            //         S = 0;
-            //     }
-            //     break;
+
             case 17:  // comentário
                 if (c == '*') {
                     lex += c;
@@ -643,6 +621,7 @@ void analisadorLexico() {
                     cin.unget();
                 }
                 break;
+
             case 18:
                 if (c == '\n') {
                     lex += c;
@@ -658,6 +637,7 @@ void analisadorLexico() {
                     S = 19;
                 }
                 break;
+
             case 19:
                 if (c == '*') {
                     lex += c;
@@ -677,15 +657,11 @@ void analisadorLexico() {
                 }
                 break;
         }
-        // cout << c << " → " << S << endl;
     }
-    // cout << lex << endl;
-    // cout << "fim do lexema" << endl;
-    // cout << "fim caractere atual: " << (int)c << "=" << c<< endl;
 }
 
 //Metodo para verificar a compatibilidade de tipos nas operacoes *, /, %, , +, -, =, >, <, >=, <=, <> OR e AND
-void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
+void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t_op) {
     switch(t_op) {
         case TOKEN_ASTER:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
@@ -696,6 +672,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
                 throw ERR_TIPO;
             }
             break;
+
         case TOKEN_BARRA:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
@@ -705,16 +682,19 @@ void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
                 throw ERR_TIPO;
             }
             break;
+
         case TOKEN_MOD:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
             }
             break;
+
         case TOKEN_AND:
             if (f1_tipo == TIPO_BOOLEAN && f1_tamanho == 0) { // se tipo 1 for boolean
                 if(f2_tipo != TIPO_BOOLEAN || f2_tamanho != 0) throw ERR_TIPO;
             } 
             break;
+
         case TOKEN_MAIS:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
@@ -724,6 +704,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
                 throw ERR_TIPO;
             }
             break;
+
         case TOKEN_MENOS:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
@@ -733,11 +714,13 @@ void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
                 throw ERR_TIPO;
             }
             break;
+
         case TOKEN_OR:
             if (f1_tipo == TIPO_BOOLEAN && f1_tamanho == 0) { // se tipo 1 for boolean
                 if(f2_tipo != TIPO_BOOLEAN || f2_tamanho != 0) throw ERR_TIPO;
             } 
             break;
+
         //ADICIONAR STRING
         case TOKEN_IGUAL:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
@@ -755,6 +738,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
                 throw ERR_TIPO;
             }
             break;
+
         case TOKEN_MAIOR:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
@@ -764,6 +748,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
                 throw ERR_TIPO;
             }
             break;
+
         case TOKEN_MENOR:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
@@ -773,6 +758,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
                 throw ERR_TIPO;
             }
             break;
+
         case TOKEN_MENOR_IGUAL:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
@@ -782,6 +768,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
                 throw ERR_TIPO;
             }
             break;
+
         case TOKEN_MAIOR_IGUAL:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
@@ -791,6 +778,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
                 throw ERR_TIPO;
             }
             break;
+
         case TOKEN_DIF:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
@@ -862,14 +850,8 @@ bool verificaTamanho(int size, int tipo){
 */
 void casaToken(int token_esperado) {
     if (reg.token == token_esperado) {
-        // cout << "token_esperado: " << token_esperado
-        //      << " token encontrado: " << reg.token << "(" << reg.lexema << ")"
-        //      << endl;
-        // cout << "Casa Token casou " << reg.lexema << " com TOKEN "
-        //      << token_esperado << endl;
         analisadorLexico();
     } else {
-        // cout << "token_esperado: " << token_esperado << " token lido: " << reg.token << "("<<reg.lexema<<")"<< endl;
         throw ERR_TOKEN;
     }
 }
@@ -896,8 +878,6 @@ void Exp(int &exp_tipo, int &exp_tamanho);
 // (4) { f.tipo = id.tipo; f.tamanho = id.tamanho }
 // (5) { se (exp.tipo != inteiro || exp.tamanho > 0) entao ERRO; f.tamanho = exp.tamanho }
 void F(int &f_tipo, int &f_tamanho) {
-    // cout << "F --> " << endl;
-
     int f1_tipo, f1_tamanho; 
     int exp_tipo, exp_tamanho;
     int const_tipo, const_tamanho, id_tipo, id_tamanho;
@@ -943,7 +923,6 @@ void F(int &f_tipo, int &f_tamanho) {
             casaToken(TOKEN_FECHA_COLCH);
         }
     }
-    // cout << f_tamanho << endl;
 }
 
 // T ->  F { ( * | / | % | and ) F }
@@ -957,7 +936,6 @@ void F(int &f_tipo, int &f_tamanho) {
 // (5) { t.op = and; t.tipo = boolean }
 // (6) { se não(verificaOps) entao ERRO }
 void T(int &t_tipo, int &t_tamanho) {
-    // cout << "T --> " << endl;
     int t_op;
     int f1_tipo, f1_tamanho, f2_tipo, f2_tamanho;
 
@@ -983,7 +961,7 @@ void T(int &t_tipo, int &t_tamanho) {
             casaToken(TOKEN_AND);
         }
         F(f2_tipo, f2_tamanho);
-        verificaOps(f1_tipo, f2_tipo, t_op);
+        verificaOps(f1_tipo, f2_tipo, f1_tamanho, f2_tamanho, t_op);
         
     }
     
@@ -1003,7 +981,6 @@ void ExpS(int &exps_tipo, int &exps_tamanho) {
     int exps_op;
     int t1_tipo, t1_tamanho, t2_tipo, t2_tamanho;
 
-    // cout << "EXPS --> " << endl;
     if (reg.token == TOKEN_MAIS) {
         casaToken(TOKEN_MAIS);
     } else if (reg.token == TOKEN_MENOS) {
@@ -1028,7 +1005,7 @@ void ExpS(int &exps_tipo, int &exps_tamanho) {
             casaToken(TOKEN_OR);
         }
         T(t2_tipo, t2_tamanho);
-        verificaOps(t1_tipo, t2_tipo, exps_op);
+        verificaOps(t1_tipo, t2_tipo, t1_tamanho, t2_tamanho, exps_op);
     }
 }
 
@@ -1039,8 +1016,6 @@ void ExpS(int &exps_tipo, int &exps_tamanho) {
 // (2) { exp_tipo = boolean; exp.tamanho = 0 }
 // (3) { se nao(VerificaOps) entao ERRO }
 void Exp(int &exp_tipo, int &exp_tamanho) {
-    // cout << "EXP --> " << endl;
-
     // declarando variaveis que serão necessarias para o semantico
     int exps1_tipo, exps1_tamanho, exps2_tipo, exps2_tamanho;
     int exp_op;
@@ -1078,7 +1053,7 @@ void Exp(int &exp_tipo, int &exp_tamanho) {
 
         ExpS(exps2_tipo, exps2_tamanho);
         
-        verificaOps(exps1_tipo, exps2_tipo, exp_op);
+        verificaOps(exps1_tipo, exps2_tipo, exps1_tamanho, exps2_tamanho, exp_op);
     }
 }
 
@@ -1095,14 +1070,15 @@ void Dec() {
     if (reg.token == TOKEN_FINAL) {
         dec_classe = CLASSE_CONST;
         casaToken(TOKEN_FINAL);
-        // retorna os dados do identificador lido
+        
+		// retorna os dados do identificador lido
         id_pos = reg.posicao;
         id_lex = reg.lexema;
         id_tamanho = t.getTamanho(id_lex, id_pos);
         id_tipo = t.getTipo(id_lex, id_pos);
         id_classe = t.getClasse(id_lex, id_pos);
-        // cout << "id " << id_lex << " possui tipo " << id_tipo;
-        //verifica a unicidade
+        
+		//verifica a unicidade
         if(id_tipo != TIPO_VAZIO){
             throw ERR_EXISTS;
         } else {
@@ -1113,7 +1089,8 @@ void Dec() {
         if (reg.token == TOKEN_MENOS) {
             casaToken(TOKEN_MENOS);
         }
-        // retorna os dados da constante
+        
+		// retorna os dados da constante
         const_val = reg.lexema;
         const_tipo = reg.tipo;
         const_tam = reg.tamanho;
@@ -1142,8 +1119,8 @@ void Dec() {
         id_tamanho = t.getTamanho(id_lex, id_pos);
         id_tipo = t.getTipo(id_lex, id_pos);
         id_classe = t.getClasse(id_lex, id_pos);
-        // cout << "id " << id_lex << " possui tipo " << id_tipo;
-        //verifica a unicidade
+        
+		//verifica a unicidade
         if(id_tipo != TIPO_VAZIO){
             throw ERR_EXISTS;
         } else { 
@@ -1157,12 +1134,13 @@ void Dec() {
             if (reg.token == TOKEN_MENOS) {
                 casaToken(TOKEN_MENOS);
             }
-            // retorna os dados da constante
+            
+			// retorna os dados da constante
             const_val = reg.lexema;
             const_tipo = reg.tipo;
             const_tam = reg.tamanho;
-            // cout << const_val << const_tipo << const_tam << endl;
-            // verifica compatibilidade
+            
+			// verifica compatibilidade
             if(!verificaCompatibDec(id_tipo, const_tipo)){ // INCOMPLETO
                 throw ERR_TIPO;
             }
@@ -1170,12 +1148,13 @@ void Dec() {
 
         } else if (reg.token == TOKEN_ABRE_COLCH) {
             casaToken(TOKEN_ABRE_COLCH);
-            // retorna os dados da constante
+            
+			// retorna os dados da constante
             const_val = reg.lexema;
             const_tipo = reg.tipo;
             const_tam = reg.tamanho;
-            // cout << const_val << const_tipo << const_tam << endl;
-            // verifica tamanho do vetor
+            
+			// verifica tamanho do vetor
             if(!verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
                 throw ERR_TAMANHO;
             }
@@ -1185,13 +1164,13 @@ void Dec() {
         t.atualizar(id_lex, id_tipo, id_tamanho, id_classe);
         while (reg.token == TOKEN_VIRG) {
             casaToken(TOKEN_VIRG);
-            // retorna os dados do identificador lido
+            
+			// retorna os dados do identificador lido
             id_pos = reg.posicao;
             id_lex = reg.lexema;
             id_tamanho = t.getTamanho(id_lex, id_pos);
             id_tipo = t.getTipo(id_lex, id_pos);
             id_classe = t.getClasse(id_lex, id_pos);
-            // cout << "id " << id_lex << " possui tipo " << id_tipo;
 
             //verifica a unicidade
             if(id_tipo != TIPO_VAZIO){
@@ -1206,24 +1185,26 @@ void Dec() {
                 if (reg.token == TOKEN_MENOS) {
                     casaToken(TOKEN_MENOS);
                 }
-                // retorna os dados da constante
+                
+				// retorna os dados da constante
                 const_val = reg.lexema;
                 const_tipo = reg.tipo;
                 const_tam = reg.tamanho;
-                // cout << const_val << const_tipo << const_tam << endl;
-                // verifica compatibilidade
+                
+				// verifica compatibilidade
                 if(!verificaCompatibDec(id_tipo, const_tipo)){ // INCOMPLETO
                     throw ERR_TIPO;
                 }
                 casaToken(TOKEN_CONST);
             } else if (reg.token == TOKEN_ABRE_COLCH) {
                 casaToken(TOKEN_ABRE_COLCH);
-                // retorna os dados da constante
+                
+				// retorna os dados da constante
                 const_val = reg.lexema;
                 const_tipo = reg.tipo;
                 const_tam = reg.tamanho;
-                // cout << const_val << const_tipo << const_tam << endl;
-                // verifica tamanho do vetor
+                
+				// verifica tamanho do vetor
                 if(!verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
                     throw ERR_TAMANHO;
                 }
@@ -1377,8 +1358,10 @@ void CmdIf() {
         }
     }
 }
+
 // CmdNull -> ;
 void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
+
 // CmdRead -> readln "(" ID ["[" Exp "]"] ")"
 void CmdRead() {
 
@@ -1393,6 +1376,7 @@ void CmdRead() {
     }
     casaToken(TOKEN_FECHA_PAREN);
 }
+
 // CmdWrite -> (write|writeln)"(" Exp {, Exp} ")"
 void CmdWrite() {
     int exp_tipo, exp1_tipo, exp_tamanho, exp1_tamanho;
@@ -1535,18 +1519,6 @@ int main() {
         return 0;
     }
 
-    // while (reg.token != TOKEN_EOF && !ERR) {
-    //     analisadorLexico();
-    //     // cout << "token " << reg.lexema << " identificado" << endl;
-    //     // cout << endl << "-- registro lexico atual --" << endl;
-    //     // cout << "posição → " << reg.posicao << ", lexema → " << reg.lexema
-    //     //      << ", tipo → " << reg.tipo << ", tamanho → " << reg.tamanho
-    //     << ", token → " << reg.token << endl;
-
-    //     // analise sintatica...
-    // }
-    // if (!ERR) cout << linha << " linhas compiladas.";
-    // t.mostrar();
     cout << linha << " linhas compiladas.";
     return 0;
 }
