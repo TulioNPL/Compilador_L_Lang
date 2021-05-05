@@ -21,7 +21,7 @@ using namespace std;
 #define TOKEN_ID 1            // identificadores
 #define TOKEN_CONST 2         // constantes
 #define TOKEN_IGUAL 3         // =
-#define TOKEN_ATRIB 4         // :-
+#define TOKEN_ATRIB 4         // :=
 #define TOKEN_ABRE_PAREN 5    // (
 #define TOKEN_FECHA_PAREN 6   // )
 #define TOKEN_MENOR 7         // <
@@ -78,6 +78,8 @@ using namespace std;
 #define ERR_TIPO -6 // usado para erro de tipo nao compativel
 #define ERR_TAMANHO -7 //usado para erro de tamanho maior que o esperado
 #define ERR_CLASSE -8 // usado para erro de classe errada
+
+
 
 // Definição da estrutura dos símbolos para serem inseridos na tabela de
 // símbolos
@@ -682,6 +684,127 @@ void analisadorLexico() {
     // cout << "fim caractere atual: " << (int)c << "=" << c<< endl;
 }
 
+//Metodo para verificar a compatibilidade de tipos nas operacoes *, /, %, , +, -, =, >, <, >=, <=, <> OR e AND
+void verificaOps(int f1_tipo, int f2_tipo, int t_op) {
+    switch(t_op) {
+        case TOKEN_ASTER:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else {
+                throw ERR_TIPO;
+            }
+            break;
+        case TOKEN_BARRA:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else {
+                throw ERR_TIPO;
+            }
+            break;
+        case TOKEN_MOD:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            }
+            break;
+        case TOKEN_AND:
+            if (f1_tipo == TIPO_BOOLEAN && f1_tamanho == 0) { // se tipo 1 for boolean
+                if(f2_tipo != TIPO_BOOLEAN || f2_tamanho != 0) throw ERR_TIPO;
+            } 
+            break;
+        case TOKEN_MAIS:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else {
+                throw ERR_TIPO;
+            }
+            break;
+        case TOKEN_MENOS:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else {
+                throw ERR_TIPO;
+            }
+            break;
+        case TOKEN_OR:
+            if (f1_tipo == TIPO_BOOLEAN && f1_tamanho == 0) { // se tipo 1 for boolean
+                if(f2_tipo != TIPO_BOOLEAN || f2_tamanho != 0) throw ERR_TIPO;
+            } 
+            break;
+        //ADICIONAR STRING
+        case TOKEN_IGUAL:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho != 0) { // se tipo 1 for vetor de char
+                if((f2_tipo != TIPO_CHAR && f2_tipo != TIPO_STRING) || f2_tamanho == 0) throw ERR_TIPO; // se tipo 2 nao for vetor de char ou string ERRO
+            } else if (f1_tipo == TIPO_BOOLEAN && f1_tamanho == 0) { // se tipo 1 for boolean
+                if(f2_tipo != TIPO_BOOLEAN || f2_tamanho != 0) throw ERR_TIPO;
+            } else if (f1_tipo == TIPO_STRING){ // se tipo 1 for string
+                if((f2_tipo != TIPO_STRING && f2_tipo != TIPO_CHAR) || f2_tamanho == 0) throw ERR_TIPO; // se tipo 2 nao for vetor de char ou string ERRO
+            } 
+            else {
+                throw ERR_TIPO;
+            }
+            break;
+        case TOKEN_MAIOR:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else {
+                throw ERR_TIPO;
+            }
+            break;
+        case TOKEN_MENOR:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else {
+                throw ERR_TIPO;
+            }
+            break;
+        case TOKEN_MENOR_IGUAL:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else {
+                throw ERR_TIPO;
+            }
+            break;
+        case TOKEN_MAIOR_IGUAL:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else {
+                throw ERR_TIPO;
+            }
+            break;
+        case TOKEN_DIF:
+            if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
+                if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
+                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
+            } else if (f1_tipo == TIPO_BOOLEAN && f1_tamanho == 0) { // se tipo 1 for boolean
+                if(f2_tipo != TIPO_BOOLEAN || f2_tamanho != 0) throw ERR_TIPO;
+            } else {
+                throw ERR_TIPO;
+            }
+            break;
+    }
+}
+
 bool verificaCompatibDec(int id_tipo, int const_tipo){
     if((id_tipo == TIPO_INT && const_tipo == TIPO_INT) 
         || (id_tipo == TIPO_CHAR && const_tipo == TIPO_CHAR)
@@ -705,6 +828,7 @@ bool verificaCompatibDec(int id_tipo, int const_tipo){
 // boolean -> boolean[]
 
 bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tamanho){
+    // cout << id_tipo << " " << exp_tipo << " " << id_tamanho << " " << exp_tamanho << endl;
     if(id_tipo == TIPO_INT){
         //confere se os inteiros manipulados sao escalares
         if(exp_tipo == TIPO_INT && id_tamanho == 0 && exp_tamanho == 0) return true;
@@ -766,11 +890,11 @@ void Exp(int &exp_tipo, int &exp_tamanho);
 
 // F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
 
-// (1) { se (f1.tipo != boolean) entao ERRO }
-// (2) { f.tipo = exp.tipo; f.tamanho = exp.tamanho }
-// (3) { f.tipo = const.tipo }
+// (1) { se (f1.tipo != boolean) entao ERRO; f.tipo = f1.tipo; f.valor = f1.valor; f.tamanho = f1.tamanho }
+// (2) { f.tipo = exp.tipo; f.tamanho = exp.tamanho; f.valor = exp.valor }
+// (3) { f.tipo = const.tipo; f.valor = const.valor;  se (const.tipo == inteiro) f.tamanho = 0 senao f.tamanho = const.tamanho }
 // (4) { f.tipo = id.tipo; f.tamanho = id.tamanho }
-// (5) { se (exp.tipo != inteiro || exp.tamanho > 0) entao ERRO; f.tamanho = 0 }
+// (5) { se (exp.tipo != inteiro || exp.tamanho > 0) entao ERRO; f.tamanho = exp.tamanho }
 void F(int &f_tipo, int &f_tamanho) {
     // cout << "F --> " << endl;
 
@@ -784,6 +908,7 @@ void F(int &f_tipo, int &f_tamanho) {
         if(f1_tipo != TIPO_BOOLEAN){
             throw ERR_TIPO;
         }
+        f_tamanho = f1_tamanho;
     } else if (reg.token == TOKEN_ABRE_PAREN) {
         casaToken(TOKEN_ABRE_PAREN);
         Exp(exp_tipo, exp_tamanho);
@@ -794,7 +919,9 @@ void F(int &f_tipo, int &f_tamanho) {
         const_tipo = reg.tipo;
         const_tamanho = reg.tamanho;
         f_tipo = const_tipo;
-        f_tamanho = const_tamanho; // consertar
+        if(const_tipo != TIPO_STRING) f_tamanho = 0;
+        else f_tamanho = const_tamanho; 
+        
         casaToken(TOKEN_CONST);
     } else {
         int id_pos, id_tipo;
@@ -812,55 +939,68 @@ void F(int &f_tipo, int &f_tamanho) {
             if((exp_tipo != TIPO_INT) || exp_tamanho > 0){
                 throw ERR_TIPO;
             }
-            f_tamanho = 0;
+            f_tamanho = exp_tamanho;
             casaToken(TOKEN_FECHA_COLCH);
         }
     }
+    // cout << f_tamanho << endl;
 }
 
 // T ->  F { ( * | / | % | and ) F }
 
 // T ->  F1 (1) { ( * (2) | / (3) | % (4) | and (5) ) F2 (6) }
 
-// (1) { t.tipo = f1.tipo }
+// (1) { t.tipo = f1.tipo; t.tamanho = f1.tamanho }
 // (2) { t.op = mult }
 // (3) { t.op = div }
 // (4) { t.op = mod }
 // (5) { t.op = and; t.tipo = boolean }
 // (6) { se não(verificaOps) entao ERRO }
-void T(int &t_tipo, int &f_tamanho) {
+void T(int &t_tipo, int &t_tamanho) {
     // cout << "T --> " << endl;
-
+    int t_op;
     int f1_tipo, f1_tamanho, f2_tipo, f2_tamanho;
 
     F(f1_tipo, f1_tamanho);
+   
+    t_tipo = f1_tipo;
+    t_tamanho = f1_tamanho;
+
     while (reg.token == TOKEN_ASTER || reg.token == TOKEN_BARRA ||
            reg.token == TOKEN_MOD || reg.token == TOKEN_AND) {
         if (reg.token == TOKEN_ASTER) {
+            t_op = reg.token;
             casaToken(TOKEN_ASTER);
         } else if (reg.token == TOKEN_BARRA) {
+            t_op = reg.token;
             casaToken(TOKEN_BARRA);
         } else if (reg.token == TOKEN_MOD) {
+            t_op = reg.token;
             casaToken(TOKEN_MOD);
         } else {
+            t_op = reg.token;
+            t_tipo = TIPO_BOOLEAN;
             casaToken(TOKEN_AND);
         }
         F(f2_tipo, f2_tamanho);
+        verificaOps(f1_tipo, f2_tipo, t_op);
+        
     }
+    
 }
 
 // ExpS -> [ + | - ] T { ( + | - | or ) T }
 
 // ExpS -> [ + | - ] T1 (1) { ( + (2) | - (3) | or (4) ) T2 (5) }
 
-// (1) { exps.tipo = t1.tipo }
+// (1) { exps.tipo = t1.tipo; exps_tamanho = t1.tamanho }
 // (2) { exps.op = add }
 // (3) { exps.op = sub }
 // (4) { exps.op = or; exps.tipo = boolean }
-// (5) { se nao(VerificaOps) entao ERRO }
+// (5) {verificaOps}
 
 void ExpS(int &exps_tipo, int &exps_tamanho) {
-
+    int exps_op;
     int t1_tipo, t1_tamanho, t2_tipo, t2_tamanho;
 
     // cout << "EXPS --> " << endl;
@@ -871,50 +1011,74 @@ void ExpS(int &exps_tipo, int &exps_tamanho) {
     }
 
     T(t1_tipo, t1_tamanho);
+    exps_tipo = t1_tipo;
+    exps_tamanho = t1_tamanho;
+
     while (reg.token == TOKEN_MAIS || reg.token == TOKEN_MENOS ||
            reg.token == TOKEN_OR) {
         if (reg.token == TOKEN_MAIS) {
+            exps_op = TOKEN_MAIS;
             casaToken(TOKEN_MAIS);
         } else if (reg.token == TOKEN_MENOS) {
+            exps_op = TOKEN_MENOS;
             casaToken(TOKEN_MENOS);
         } else {
+            exps_op = TOKEN_OR;
+            exps_tipo = TIPO_BOOLEAN;
             casaToken(TOKEN_OR);
         }
         T(t2_tipo, t2_tamanho);
+        verificaOps(t1_tipo, t2_tipo, exps_op);
     }
 }
 
 // Exp -> ExpS [ ( = | > | < | <> | <= | >= ) ExpS ]
 // Exp -> ExpS1 (1) [ ( = | > | < | <> | <= | >= ) (2) ExpS2 (3) ]
 
-// (1) { exp_tipo = exps_tipo  }
-// (2) { exp_tipo = boolean }
+// (1) { exp_tipo = exps_tipo; exp.tamanho = exps.tamanho;  }
+// (2) { exp_tipo = boolean; exp.tamanho = 0 }
 // (3) { se nao(VerificaOps) entao ERRO }
 void Exp(int &exp_tipo, int &exp_tamanho) {
     // cout << "EXP --> " << endl;
 
     // declarando variaveis que serão necessarias para o semantico
     int exps1_tipo, exps1_tamanho, exps2_tipo, exps2_tamanho;
-    int op;
-
+    int exp_op;
+    
     ExpS(exps1_tipo, exps1_tamanho);
+
+    exp_tipo = exps1_tipo;
+    exp_tamanho = exps1_tamanho;
+
     if (reg.token == TOKEN_IGUAL || reg.token == TOKEN_MAIOR ||
         reg.token == TOKEN_MENOR || reg.token == TOKEN_DIF ||
         reg.token == TOKEN_MENOR_IGUAL || reg.token == TOKEN_MAIOR_IGUAL) {
         if (reg.token == TOKEN_IGUAL) {
+            exp_op = TOKEN_IGUAL;
             casaToken(TOKEN_IGUAL);
         } else if (reg.token == TOKEN_MAIOR) {
+            exp_op = TOKEN_MAIOR;
             casaToken(TOKEN_MAIOR);
         } else if (reg.token == TOKEN_MENOR) {
+            exp_op = TOKEN_MENOR;
             casaToken(TOKEN_MENOR);
         } else if (reg.token == TOKEN_DIF) {
+            exp_op = TOKEN_DIF;
             casaToken(TOKEN_DIF);
         } else if (reg.token == TOKEN_MENOR_IGUAL) {
+            exp_op = TOKEN_MENOR_IGUAL;
             casaToken(TOKEN_MENOR_IGUAL);
         } else {
+            exp_op = TOKEN_MAIOR_IGUAL;
             casaToken(TOKEN_MAIOR_IGUAL);
         }
+
+        exp_tipo = TIPO_BOOLEAN;
+        exp_tamanho = 0;
+
         ExpS(exps2_tipo, exps2_tamanho);
+        
+        verificaOps(exps1_tipo, exps2_tipo, exp_op);
     }
 }
 
@@ -1125,12 +1289,14 @@ void CmdAtr() {
         if(exp1_tipo != TIPO_INT){
             throw ERR_TIPO;
         }
-
+        id_tamanho = 0; //tamanho do id assume 0 pois agora ele sera um escalar
         casaToken(TOKEN_FECHA_COLCH);
     }
     casaToken(TOKEN_ATRIB);
 
     Exp(exp2_tipo, exp2_tamanho);
+    
+
     if(!(verificaCompatibAtr(id_tipo, exp2_tipo, id_tamanho, exp2_tamanho))) throw ERR_TIPO;
 }
 
@@ -1217,7 +1383,6 @@ void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
 void CmdRead() {
 
     int exp_tipo, exp_tamanho;
-
     casaToken(TOKEN_READLN);
     casaToken(TOKEN_ABRE_PAREN);
     casaToken(TOKEN_ID);
