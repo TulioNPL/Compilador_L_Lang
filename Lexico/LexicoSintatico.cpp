@@ -218,7 +218,6 @@ int TabelaSimbolos::pesquisar(string lex) {
     int pos_inicial = hash(lex);
 
     // Verifica se a lista da posição encontrada é vazia
-    // cout << "pos_inicial: " << pos_inicial << endl;
     if (tabela[pos_inicial].size() != 0) {
         // Pesquisa o lexema na tabela de simbolos
         list<Simbolo>::iterator i;
@@ -563,8 +562,6 @@ void analisadorLexico() {
 
                     S = 0;
                 } else {
-                    // cout << S << endl;
-
                     throw lex;
                 }
                 break;
@@ -815,9 +812,9 @@ bool verificaCompatibDec(int id_tipo, int const_tipo){
 // boolean -> boolean[]
 
 bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tamanho){
-    // cout << id_tipo << " " << exp_tipo << " " << id_tamanho << " " << exp_tamanho << endl;
     if(id_tipo == TIPO_INT){
         //confere se os inteiros manipulados sao escalares
+        // aqui demtro ten qui ver si eh vetor o nao
         if(exp_tipo == TIPO_INT && id_tamanho == 0 && exp_tamanho == 0) return true;
     } else if (id_tipo == TIPO_CHAR){
         if(id_tamanho > 0) { // se ID for vetor
@@ -830,6 +827,7 @@ bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tama
         //confere se os boolean manipulados sao escalares
         if(exp_tipo == TIPO_BOOLEAN && id_tamanho == 0 && exp_tamanho == 0) return true;
     }
+    return false;
 }
 
 bool verificaTamanho(int size, int tipo){
@@ -913,6 +911,9 @@ void F(int &f_tipo, int &f_tamanho) {
         f_tamanho = id_tamanho;
         casaToken(TOKEN_ID);
         if (reg.token == TOKEN_ABRE_COLCH) {
+            if(f_tamanho == 0) {
+                throw ERR_TIPO;
+            }
             casaToken(TOKEN_ABRE_COLCH);
             Exp(exp_tipo, exp_tamanho);
             if((exp_tipo != TIPO_INT) || exp_tamanho > 0){
@@ -1051,7 +1052,6 @@ void Exp(int &exp_tipo, int &exp_tamanho) {
         exp_tamanho = 0;
 
         ExpS(exps2_tipo, exps2_tamanho);
-        
         verificaOps(exps1_tipo, exps2_tipo, exps1_tamanho, exps2_tamanho, exp_op);
     }
 }
@@ -1157,6 +1157,7 @@ void Dec() {
             if(!verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
                 throw ERR_TAMANHO;
             }
+            id_tamanho = stoi(const_val);
             casaToken(TOKEN_CONST);
             casaToken(TOKEN_FECHA_COLCH);
         }
@@ -1207,6 +1208,7 @@ void Dec() {
                 if(!verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
                     throw ERR_TAMANHO;
                 }
+                id_tamanho = stoi(const_val);
                 casaToken(TOKEN_CONST);
                 casaToken(TOKEN_FECHA_COLCH);
             }
@@ -1250,7 +1252,6 @@ void CmdAtr() {
     id_classe = t.getClasse(id_lex, id_pos);
     id_tamanho = t.getTamanho(id_lex, id_pos);
 
-
     if(id_tipo == TIPO_VAZIO){ // se tipo vazio, id não declarado
         throw ERR_NOT_EXISTS;
     } else { // senão, atribui tipo do id
@@ -1260,7 +1261,7 @@ void CmdAtr() {
     if(id_classe == CLASSE_CONST) {
         throw ERR_CLASSE;
     }
-
+    
     casaToken(TOKEN_ID);
     if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
@@ -1273,11 +1274,10 @@ void CmdAtr() {
         casaToken(TOKEN_FECHA_COLCH);
     }
     casaToken(TOKEN_ATRIB);
-
     Exp(exp2_tipo, exp2_tamanho);
     
 
-    if(!(verificaCompatibAtr(id_tipo, exp2_tipo, id_tamanho, exp2_tamanho))) throw ERR_TIPO;
+    if(!(verificaCompatibAtr(atr_tipo, exp2_tipo, id_tamanho, exp2_tamanho))) throw ERR_TIPO;
 }
 
 // CmdRep -> for"(" [CmdP {, CmdP}]; Exp; [CmdP {, CmdP}] ")" (Cmd | BlocoCmd)
