@@ -12,46 +12,14 @@ boolean j, k:= FALSE;
 boolean l[2000];
 
 main {
-   /* d[0] := a * c;
-    z := "aaa";
-    h := z; 
-    i := a < b;
-    j := h = "tulio kkk xd 123"; */
-
-    /* ints */
-    i := a = b;
-    i := d[0] = b;
-    i := a = d[0];
-    i := d[0] = d[1];
-
-    a := a + b;
-    a := d[0] + b;
-    a := a + b[0];
-    a := d[0] + d[1];
-
-    a := a * b;
-    a := d[0] * b;
-    a := a * b[0];
-    a := d[0] * d[1];
-
-    /* 
-    erros  
-    a := d * a;
-    a := a * d;
-    a := d + a;
-    a := a + d;
-    a := d = a;
-    a := a = d;
-    */
-    
-    /* chars */
+    if (TRUE) then b := a;
 }
 
 
 
 /* doigenes aqui ->
  utlio aqui ->
-
+ acrlin nao aqui -> 
 int int
 int[] int
 int int[]
