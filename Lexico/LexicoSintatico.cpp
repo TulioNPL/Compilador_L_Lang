@@ -798,18 +798,26 @@ bool verificaCompatibDec(int id_tipo, int const_tipo){
         return false;
 }
 
-// int -> int[]
-// int[] -> int
-// int -> int
+bool verificaCompatibRead(int id_tipo, int id_tamanho, int id_classe) {
+    if(id_classe == CLASSE_VAR) {
+        if (id_tipo == TIPO_INT){
+            if(id_tamanho == 0) return true;
+        } else if (id_tipo == TIPO_CHAR || id_tipo == TIPO_STRING) {
+            return true;
+        } 
+    } 
+    return false;
+}
 
-// char id -> string
-// char id -> char id
-// char[] -> char
-// char -> char
+bool verificaCompatibWrite(int exp_tipo, int exp_tamanho){
+    if(exp_tipo == TIPO_INT){
+        if(exp_tamanho == 0) return true;
+    } else if (exp_tipo == TIPO_CHAR || exp_tipo == TIPO_STRING) {
+        return true;
+    } 
 
-// boolean -> boolean
-// boolean[] -> boolean
-// boolean -> boolean[]
+    return false;
+}
 
 bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tamanho){
     if(id_tipo == TIPO_INT){
@@ -896,6 +904,9 @@ void F(int &f_tipo, int &f_tamanho) {
         const_tipo = reg.tipo;
         const_tamanho = reg.tamanho;
         f_tipo = const_tipo;
+
+        if (reg.lexema == "TRUE" || reg.lexema == "FALSE") f_tipo = TIPO_BOOLEAN;
+
         if(const_tipo != TIPO_STRING) f_tamanho = 0;
         else f_tamanho = const_tamanho; 
         
@@ -1056,8 +1067,19 @@ void Exp(int &exp_tipo, int &exp_tamanho) {
     }
 }
 
-// Dec -> ( int | boolean | char ) ID [:= [-]CONST | "[" CONST "]"] {, ID [:=
-// [-]CONST | "[" CONST "]"] } ; | final ID = [-]CONST ;
+// Dec -> ( int | boolean | char ) ID [:= [-]CONST | "[" CONST "]"] {, ID [:= [-]CONST | "[" CONST "]"] } ; | final ID = [-]CONST ;
+// Dec -> ( int (1)| boolean (2)| char (3)) ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8) {, ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8)} ; | final (7) ID (10) = [-]CONST (9) ; (8)
+
+// (1) { Dec.tipo = inteiro; dec.classe = classe_var }
+// (2) { Dec.tipo = boolean; dec.classe = classe_var }
+// (3) { Dec.tipo = char; dec.classe = classe_var }
+// (4) { se (id.tipo == vazio) entao {id.tipo = dec.tipo; id.classe = dec.classe} senao erro }
+// (5) { se (nao compativel(dec.tipo, const.tipo)) entao erro }
+// (6) { se (const.val <= 8kbytes) entao (id.tamanho = const.val) senao erro}
+// (7) { Dec.classe = classe_const }
+// (8) { atualizarTabelaSimbolos();}
+// (9) { dec_tipo = const_tipo }
+// (10) { se (id.tipo == vazio) entao {id.classe = dec.classe} senao erro }
 void Dec() {
     // iniciando variaveis regra DEC
     int dec_tipo, dec_classe;
@@ -1076,7 +1098,9 @@ void Dec() {
         id_tamanho = t.getTamanho(id_lex, id_pos);
         id_tipo = t.getTipo(id_lex, id_pos);
         id_classe = t.getClasse(id_lex, id_pos);
+
         
+
 		//verifica a unicidade
         if(id_tipo != TIPO_VAZIO){
             throw ERR_EXISTS;
@@ -1118,7 +1142,7 @@ void Dec() {
         id_tamanho = t.getTamanho(id_lex, id_pos);
         id_tipo = t.getTipo(id_lex, id_pos);
         id_classe = t.getClasse(id_lex, id_pos);
-        
+
 		//verifica a unicidade
         if(id_tipo != TIPO_VAZIO){
             throw ERR_EXISTS;
@@ -1192,7 +1216,7 @@ void Dec() {
                 const_tam = reg.tamanho;
                 
 				// verifica compatibilidade
-                if(!verificaCompatibDec(id_tipo, const_tipo)){ // INCOMPLETO
+                if(!verificaCompatibDec(id_tipo, const_tipo)){
                     throw ERR_TIPO;
                 }
                 casaToken(TOKEN_CONST);
@@ -1205,7 +1229,7 @@ void Dec() {
                 const_tam = reg.tamanho;
                 
 				// verifica tamanho do vetor
-                if(!verificaTamanho(stoi(const_val), id_tipo)){ //INCOMPLETO
+                if(!verificaTamanho(stoi(const_val), id_tipo)){
                     throw ERR_TAMANHO;
                 }
                 id_tamanho = stoi(const_val);
@@ -1326,6 +1350,9 @@ void CmdRep() {
 }
 
 // CmdIf -> if"(" Exp ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
+// CmdIf -> if"(" Exp (1) ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
+
+// (1) -> { se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO }
 void CmdIf() {
 
     int exp_tipo, exp_tamanho;
@@ -1333,6 +1360,9 @@ void CmdIf() {
     casaToken(TOKEN_IF);
     casaToken(TOKEN_ABRE_PAREN);
     Exp(exp_tipo, exp_tamanho);
+
+    if(exp_tipo != TIPO_BOOLEAN || exp_tamanho > 0) throw ERR_TIPO;
+
     casaToken(TOKEN_FECHA_PAREN);
     casaToken(TOKEN_THEN);
 
@@ -1362,21 +1392,39 @@ void CmdIf() {
 void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
 
 // CmdRead -> readln "(" ID ["[" Exp "]"] ")"
+// CmdRead -> readln "(" ID (1) ["[" Exp (2) "]"] ")"
+
+// (1) -> { se id.tipo != int || char || string entao ERRO   }
+// (2) -> { se exp.tipo != int || exp.tamanho > 0 entao ERRO }
 void CmdRead() {
 
-    int exp_tipo, exp_tamanho;
+    int exp_tipo, exp_tamanho, id_tipo, id_tamanho, id_classe;
     casaToken(TOKEN_READLN);
     casaToken(TOKEN_ABRE_PAREN);
+    id_tipo = t.getTipo(reg.lexema, reg.posicao);
+    id_tamanho = t.getTamanho(reg.lexema, reg.posicao);
+    id_classe = t.getClasse(reg.lexema, reg.posicao);
     casaToken(TOKEN_ID);
+
+    if(!verificaCompatibRead(id_tipo,id_tamanho, id_classe)){
+        throw ERR_TIPO;
+    }
+
     if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
         Exp(exp_tipo, exp_tamanho);
+
+        if(exp_tipo != TIPO_INT || exp_tamanho > 0) throw ERR_TIPO;
+
         casaToken(TOKEN_FECHA_COLCH);
     }
     casaToken(TOKEN_FECHA_PAREN);
 }
 
 // CmdWrite -> (write|writeln)"(" Exp {, Exp} ")"
+// CmdWrite -> (write|writeln)"(" Exp (1) {, Exp (1) } ")"
+
+// (1) { if exp.tipo != int || char || string }
 void CmdWrite() {
     int exp_tipo, exp1_tipo, exp_tamanho, exp1_tamanho;
 
@@ -1388,9 +1436,16 @@ void CmdWrite() {
 
     casaToken(TOKEN_ABRE_PAREN);
     Exp(exp_tipo, exp_tamanho);
+    if(!verificaCompatibWrite(exp_tipo, exp_tamanho)){
+        throw ERR_TIPO;
+    }
+
     while (reg.token == TOKEN_VIRG) {
         casaToken(TOKEN_VIRG);
         Exp(exp1_tipo, exp1_tamanho);
+        if(!verificaCompatibWrite(exp1_tipo, exp1_tamanho)){
+            throw ERR_TIPO;
+        }   
     }
     casaToken(TOKEN_FECHA_PAREN);
 }
