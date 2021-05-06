@@ -875,13 +875,14 @@ void Exp(int &exp_tipo, int &exp_tamanho);
 
 // F -> not F | "(" Exp ")" | CONST | ID [ "[" Exp "]" ]
 
-// F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
+// F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (6)(4) [ "[" Exp (5) "]" ]
 
 // (1) { se (f1.tipo != boolean) entao ERRO; f.tipo = f1.tipo; f.valor = f1.valor; f.tamanho = f1.tamanho }
 // (2) { f.tipo = exp.tipo; f.tamanho = exp.tamanho; f.valor = exp.valor }
 // (3) { f.tipo = const.tipo; f.valor = const.valor;  se (const.tipo == inteiro) f.tamanho = 0 senao f.tamanho = const.tamanho }
 // (4) { f.tipo = id.tipo; f.tamanho = id.tamanho }
 // (5) { se (exp.tipo != inteiro || exp.tamanho > 0) entao ERRO; f.tamanho = exp.tamanho }
+// (6) { se id.tipo == TIPO_VAZIO entao ERRO }
 void F(int &f_tipo, int &f_tamanho) {
     int f1_tipo, f1_tamanho; 
     int exp_tipo, exp_tamanho;
@@ -920,6 +921,9 @@ void F(int &f_tipo, int &f_tamanho) {
         id_tamanho = t.getTamanho(id_lex, id_pos);
         f_tipo = id_tipo;
         f_tamanho = id_tamanho;
+
+        if(f_tipo == TIPO_VAZIO) throw ERR_NOT_EXISTS;
+
         casaToken(TOKEN_ID);
         if (reg.token == TOKEN_ABRE_COLCH) {
             if(f_tamanho == 0) {
@@ -1245,6 +1249,7 @@ void Dec() {
 // pré declarando comando Cmd(); e CmdP();
 void Cmd();
 void CmdP();
+void CmdFor();
 
 // BlocoCmd -> "{" { Cmd } "}"
 void BlocoCmd() {
@@ -1304,7 +1309,9 @@ void CmdAtr() {
     if(!(verificaCompatibAtr(atr_tipo, exp2_tipo, id_tamanho, exp2_tamanho))) throw ERR_TIPO;
 }
 
-// CmdRep -> for"(" [CmdP {, CmdP}]; Exp; [CmdP {, CmdP}] ")" (Cmd | BlocoCmd)
+
+//CmdRep -> for"(" [CmdFor {, CmdFor}]; Exp (1); [CmdFor {, CmdFor}] ")" (Cmd | BlocoCmd)
+//(1) -> { se exp.tipo != BOOLEAN entao ERRO}
 void CmdRep() {
 
     int exp_tipo, exp_tamanho;
@@ -1312,28 +1319,35 @@ void CmdRep() {
     casaToken(TOKEN_FOR);
     casaToken(TOKEN_ABRE_PAREN);
     if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
-        reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
-        CmdP();
+        reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN || 
+        reg.token == TOKEN_IF || reg.token == TOKEN_FOR) {
+        CmdFor();
         while (reg.token == TOKEN_VIRG) {
             casaToken(TOKEN_VIRG);
             if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
-                reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
-                CmdP();
+                reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN || 
+                reg.token == TOKEN_IF || reg.token == TOKEN_FOR) {
+                CmdFor();
             }
         }
     }
 
     casaToken(TOKEN_PONTO_VIRG);
     Exp(exp_tipo, exp_tamanho);
+
+    if(exp_tipo != TIPO_BOOLEAN || exp_tamanho > 0) throw ERR_TIPO;
+
     casaToken(TOKEN_PONTO_VIRG);
     if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
-        reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
-        CmdP();
+        reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN || 
+        reg.token == TOKEN_IF || reg.token == TOKEN_FOR) {
+        CmdFor();
         while (reg.token == TOKEN_VIRG) {
             casaToken(TOKEN_VIRG);
             if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
-                reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
-                CmdP();
+                reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN || 
+                reg.token == TOKEN_IF || reg.token == TOKEN_FOR) {
+                CmdFor();
             }
         }
     }
@@ -1392,10 +1406,11 @@ void CmdIf() {
 void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
 
 // CmdRead -> readln "(" ID ["[" Exp "]"] ")"
-// CmdRead -> readln "(" ID (1) ["[" Exp (2) "]"] ")"
+// CmdRead -> readln "(" ID (2) ["[" Exp (3) "]"] (1) ")"
 
-// (1) -> { se id.tipo != int || char || string entao ERRO   }
-// (2) -> { se exp.tipo != int || exp.tamanho > 0 entao ERRO }
+// (1) -> { se id.tipo != int || char || string e for vetor entao ERRO }
+// (2) -> { se id.tipo == VAZIO entao ERRO}
+// (3) -> { se exp.tipo != int && exp.tamanho > 0 entao ERRO }
 void CmdRead() {
 
     int exp_tipo, exp_tamanho, id_tipo, id_tamanho, id_classe;
@@ -1404,19 +1419,22 @@ void CmdRead() {
     id_tipo = t.getTipo(reg.lexema, reg.posicao);
     id_tamanho = t.getTamanho(reg.lexema, reg.posicao);
     id_classe = t.getClasse(reg.lexema, reg.posicao);
-    casaToken(TOKEN_ID);
 
-    if(!verificaCompatibRead(id_tipo,id_tamanho, id_classe)){
-        throw ERR_TIPO;
-    }
+    if(id_tipo == TIPO_VAZIO) throw ERR_NOT_EXISTS;
+
+    casaToken(TOKEN_ID);
 
     if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
         Exp(exp_tipo, exp_tamanho);
 
         if(exp_tipo != TIPO_INT || exp_tamanho > 0) throw ERR_TIPO;
-
+        id_tamanho = 0; //tamanho do id assume 0 pois agora ele sera um escalar
         casaToken(TOKEN_FECHA_COLCH);
+    }
+    
+    if(!verificaCompatibRead(id_tipo,id_tamanho, id_classe)){
+        throw ERR_TIPO;
     }
     casaToken(TOKEN_FECHA_PAREN);
 }
@@ -1450,6 +1468,22 @@ void CmdWrite() {
     casaToken(TOKEN_FECHA_PAREN);
 }
 
+//CmdFor -> CmdAtr | CmdWrite | CmdRead | CmdFor | CmdIf
+void CmdFor() {
+    if(reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN){
+        CmdWrite();
+    } else if (reg.token == TOKEN_READLN) {
+        CmdRead();
+    } else if (reg.token == TOKEN_FOR) {
+        CmdRep();
+    } else if (reg.token == TOKEN_IF) {
+        CmdIf();
+    } else {
+        CmdAtr();
+    }
+}
+
+
 // CmdP -> CmdAtr | CmdWrite | CmdRead
 void CmdP() {
     if (reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN) {
@@ -1467,13 +1501,14 @@ void Cmd() {
         CmdRep();
     } else if (reg.token == TOKEN_IF) {
         CmdIf();
-    } else if (reg.token == TOKEN_PONTO_VIRG) {
-        CmdNull();
     } else /*if(reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN ||
               reg.token == TOKEN_READLN || reg.token == TOKEN_ID || reg.token ==
               TOKEN_PONTO_VIRG)*/
     {
-        CmdP();
+        if(reg.token == TOKEN_WRITE || reg.token == TOKEN_WRITELN ||
+           reg.token == TOKEN_READLN || reg.token == TOKEN_ID){
+            CmdP();
+        }
         casaToken(TOKEN_PONTO_VIRG);
     }
 }

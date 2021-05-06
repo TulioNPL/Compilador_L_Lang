@@ -12,7 +12,10 @@ boolean j, k:= FALSE;
 boolean l[2000];
 
 main {
-    if (TRUE) then b := a;
+    /*
+    i := a + y;
+    */
+    readln(x);
 }
 
 

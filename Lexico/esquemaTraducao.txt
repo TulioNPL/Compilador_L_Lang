@@ -12,13 +12,14 @@ Dec -> ( int (1)| boolean (2)| char (3)) ID (4) [:= [-]CONST (5) | "[" CONST (6)
 (10) { se (id.tipo == vazio) entao {id.classe = dec.classe} senao erro }
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
-// F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
+// F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (6)(4) [ "[" Exp (5) "]" ]
 
 // (1) { se (f1.tipo != boolean) entao ERRO; f.tipo = f1.tipo; f.valor = f1.valor; f.tamanho = f1.tamanho }
 // (2) { f.tipo = exp.tipo; f.tamanho = exp.tamanho; f.valor = exp.valor }
 // (3) { f.tipo = const.tipo; f.valor = const.valor;  se (const.tipo == inteiro) f.tamanho = 0 senao f.tamanho = const.tamanho }
 // (4) { f.tipo = id.tipo; f.tamanho = id.tamanho }
 // (5) { se (exp.tipo != inteiro || exp.tamanho > 0) entao ERRO; f.tamanho = exp.tamanho }
+// (6) { se id.tipo == TIPO_VAZIO entao ERRO }
 
 
 
@@ -69,10 +70,11 @@ ________________________________________________________________________________
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
 
-CmdRead -> readln "(" ID (1) ["[" Exp (2) "]"] ")"
+CmdRead -> readln "(" ID (2) ["[" Exp (3) "]"] (1) ")"
 
-(1) -> { se id.tipo != int || char || string entao ERRO   }
-(2) -> { se exp.tipo != int && exp.tamanho > 0 entao ERRO }
+(1) -> { se id.tipo != int || char || string e for vetor entao ERRO }
+(2) -> { se id.tipo == VAZIO entao ERRO}
+(3) -> { se exp.tipo != int && exp.tamanho > 0 entao ERRO }
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
 CmdIf -> if"(" Exp (1) ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
@@ -81,17 +83,21 @@ CmdIf -> if"(" Exp (1) ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
 
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
+CmdRep -> for"(" [CmdFor {, CmdFor}]; Exp (1); [CmdFor {, CmdFor}] ")" (Cmd | BlocoCmd)
+
+(1) -> { se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO }
+
+_______________________________________________________________________________________________________________________________________________________________________________________________________
+
 
 CmdP -> CmdAtr | CmdWrite | CmdRead
 
-Cmd -→ CmdP ; | CmdFor | CmdIf | CmdNull
+Cmd -→ [CmdP] ; | CmdFor | CmdIf
+
+CmdFor -> CmdAtr | CmdWrite | CmdRead | CmdFor | CmdIf
 
 Prog -> { Dec } main BlocoCmd EOF
 
-CmdNull -> ;
 
-CmdIf -> if"(" Exp ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
-
-CmdRep -> for"(" [CmdP {, CmdP}]; Exp; [CmdP {, CmdP}] ")" (Cmd | BlocoCmd)
 
 BlocoCmd -> "{" { Cmd } "}"
