@@ -3,6 +3,7 @@
 .vscode
 *.txt
 *.l
+*.asm
 
 # Prerequisites
 *.d
