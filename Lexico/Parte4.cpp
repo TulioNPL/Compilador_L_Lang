@@ -110,13 +110,27 @@ RegLex reg;
 int contadorDados;
 
 //iniciando variavel global para temporarios
-int contadorTemp;
+int contadorTemp = 0; // inicia em 0
 
 //iniciando variavel global para rotulos
-int contadorRot;
+int contadorRot = 0;
 
 // iniciando variavel global para o arquivo de saida
 ofstream saida;
+
+string novoRot(){
+    return "R" + std::to_string(contadorRot++);
+}
+
+int novoTemp(int tipo){
+    int temp = contadorTemp;
+    if(tipo == TIPO_CHAR){
+        contadorTemp += 1;
+    } else {
+        contadorTemp += 2;
+    }
+    return temp;
+}
 
 // classe da tabela de simbolos
 class TabelaSimbolos {
@@ -983,24 +997,34 @@ void Exp(int &exp_tipo, int &exp_tamanho);
 // (4) { f.tipo = id.tipo; f.tamanho = id.tamanho }
 // (5) { se (exp.tipo != inteiro || exp.tamanho > 0) entao ERRO; f.tamanho = exp.tamanho }
 // (6) { se id.tipo == TIPO_VAZIO entao ERRO }
-void F(int &f_tipo, int &f_tamanho) {
-    int f1_tipo, f1_tamanho; 
+void F(int &f_tipo, int &f_tamanho, int &f_end) {
+    int f1_tipo, f1_tamanho, f1_end; 
     int exp_tipo, exp_tamanho;
     int const_tipo, const_tamanho, id_tipo, id_tamanho;
 
     if (reg.token == TOKEN_NOT) {
         casaToken(TOKEN_NOT);
-        F(f1_tipo, f1_tamanho);
+        F(f1_tipo, f1_tamanho, f1_end);
+
         if(f1_tipo != TIPO_BOOLEAN){
             throw ERR_TIPO;
         }
         f_tamanho = f1_tamanho;
+        f_tipo = f1.tipo; 
+        // f_end = novoTemp();
+        // saida << "\tmov ax, ds:[" << hex << f1_end << "]" << endl;
+        // saida << "\tneg ax" << endl;
+        // saida << "\tadd ax, 1" << endl;
+        // saida << "\tmov ds:[" << hex << f_end << "], ax" << endl;
+
     } else if (reg.token == TOKEN_ABRE_PAREN) {
         casaToken(TOKEN_ABRE_PAREN);
-        Exp(exp_tipo, exp_tamanho);
+        Exp(exp_tipo, exp_tamanho, exp_end);
         f_tipo = exp_tipo;
         f_tamanho = exp_tamanho;
+        //f_end = exp_end;
         casaToken(TOKEN_FECHA_PAREN);
+
     } else if (reg.token == TOKEN_CONST) {
         const_tipo = reg.tipo;
         const_tamanho = reg.tamanho;
@@ -1008,9 +1032,21 @@ void F(int &f_tipo, int &f_tamanho) {
 
         if (reg.lexema == "TRUE" || reg.lexema == "FALSE") f_tipo = TIPO_BOOLEAN;
 
-        if(const_tipo != TIPO_STRING) f_tamanho = 0;
-        else f_tamanho = const_tamanho; 
-        
+        if(const_tipo != TIPO_STRING){
+            f_tamanho = 0;
+            //f_end = novoTemp();
+            //saida << "\tmov ax, " << reg.lexema << endl;
+            //saida << "\tmov ds:[" << hex << f_end << "], ax" << endl;
+        } 
+        else { //Const eh string
+            f_tamanho = const_tamanho;
+            // saida << "dseg SEGMENT PUBLIC" << endl;
+            // saida << "\tbyte " << "\"" << reg.lexema.substr(1,reg.lexema.length() - 2) << "$\"" << endl; 
+            // saida << "dseg ENDS" << endl;
+            // f_end = contadorDados;
+            // contadorDados += const_tamanho;
+        }
+
         casaToken(TOKEN_CONST);
     } else {
         int id_pos, id_tipo;
@@ -1019,8 +1055,10 @@ void F(int &f_tipo, int &f_tamanho) {
         id_lex = reg.lexema;
         id_tipo = t.getTipo(id_lex, id_pos);
         id_tamanho = t.getTamanho(id_lex, id_pos);
+        //id_end = t.getEnd(id_lex, id_pos);
         f_tipo = id_tipo;
         f_tamanho = id_tamanho;
+        //f_end = id_end;
 
         if(f_tipo == TIPO_VAZIO) throw ERR_NOT_EXISTS;
 
@@ -1030,11 +1068,18 @@ void F(int &f_tipo, int &f_tamanho) {
                 throw ERR_TIPO;
             }
             casaToken(TOKEN_ABRE_COLCH);
-            Exp(exp_tipo, exp_tamanho);
+            Exp(exp_tipo, exp_tamanho, exp_end);
             if((exp_tipo != TIPO_INT) || exp_tamanho > 0){
                 throw ERR_TIPO;
             }
             f_tamanho = exp_tamanho;
+            // f_end = novoTemp()
+            // saida << "\tmov ax, DS:[" << hex << exp_end<< "]" << endl;
+            // if(f_tipo == TIPO_INT) 
+                // saida << "\tadd ax, DS:[" << hex << exp_end << "]" << endl;
+            // saida << "\tadd ax, " << hex << id_end << << endl;
+            // saida << "\tmov bx, DS:[ax]" << endl;
+            // saida << "\tmov ds:[" << hex << f_end << "], bx" << endl;
             casaToken(TOKEN_FECHA_COLCH);
         }
     }
@@ -1048,14 +1093,15 @@ void F(int &f_tipo, int &f_tamanho) {
 // (4) { t.op = mod }
 // (5) { t.op = and; t.tipo = boolean }
 // (6) { se não(verificaOps) entao ERRO }
-void T(int &t_tipo, int &t_tamanho) {
+void T(int &t_tipo, int &t_tamanho, int &t_end) {
     int t_op;
-    int f1_tipo, f1_tamanho, f2_tipo, f2_tamanho;
+    int f1_tipo, f1_tamanho, f1_end, f2_tipo, f2_tamanho, f2_end;
 
-    F(f1_tipo, f1_tamanho);
+    F(f1_tipo, f1_tamanho,f1_end);
    
     t_tipo = f1_tipo;
     t_tamanho = f1_tamanho;
+    t_end = f1_end;
 
     while (reg.token == TOKEN_ASTER || reg.token == TOKEN_BARRA ||
            reg.token == TOKEN_MOD || reg.token == TOKEN_AND) {
@@ -1073,9 +1119,25 @@ void T(int &t_tipo, int &t_tamanho) {
             t_tipo = TIPO_BOOLEAN;
             casaToken(TOKEN_AND);
         }
-        F(f2_tipo, f2_tamanho);
+        F(f2_tipo, f2_tamanho, f2_end);
         verificaOps(f1_tipo, f2_tipo, f1_tamanho, f2_tamanho, t_op);
         
+        // saida << "\tmov ax, ds:[" << hex << t_end << "]" << endl;
+        // saida << "\tmov bx, ds:[" << hex << f2_end<< "]" << endl;
+        // if (t_op == TOKEN_ASTER) saida << "\timul bx" << endl;
+        // else if(t_op == TOKEN_BARRA) { 
+        //     saida << "\tcwd" << endl;
+        //     saida << "\tidiv bx" << endl;
+        // } else if(t_op == TOKEN_MOD) {
+        //     saida << "\tcwd" << endl;
+        //     saida << "\tidiv bx" << endl;
+        //     saida << "\tmov ax, dx" << endl; // move resto para o registrador Ax
+        // } else saida << "\timul bx" << endl;
+            
+
+        // t_end = novoTemp();
+        // saida << "\tmov ds:[" << hex << t_end << "], ax" << endl;
+
     }
     
 }
@@ -1087,19 +1149,28 @@ void T(int &t_tipo, int &t_tamanho) {
 // (3) { exps.op = sub }
 // (4) { exps.op = or; exps.tipo = boolean }
 // (5) {verificaOps}
-void ExpS(int &exps_tipo, int &exps_tamanho) {
+void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
     int exps_op;
-    int t1_tipo, t1_tamanho, t2_tipo, t2_tamanho;
+    int t1_tipo, t1_tamanho, t1_end, t2_tipo, t2_tamanho, t2_end;
+    bool neg = false;
 
     if (reg.token == TOKEN_MAIS) {
         casaToken(TOKEN_MAIS);
     } else if (reg.token == TOKEN_MENOS) {
+        neg = true;
         casaToken(TOKEN_MENOS);
     }
 
-    T(t1_tipo, t1_tamanho);
+    T(t1_tipo, t1_tamanho, t1_end);
     exps_tipo = t1_tipo;
     exps_tamanho = t1_tamanho;
+    exps_end = t1_end;
+
+    if(neg) {
+        // saida << "\tmov ax,ds:[" << hex << exps_end << "]" << endl;
+        // saida << "\tneg ax" << endl;
+        // saida << "\tmov ds:[" << hex << exps_end << "], ax" << endl;
+    }
 
     while (reg.token == TOKEN_MAIS || reg.token == TOKEN_MENOS ||
            reg.token == TOKEN_OR) {
@@ -1114,8 +1185,24 @@ void ExpS(int &exps_tipo, int &exps_tamanho) {
             exps_tipo = TIPO_BOOLEAN;
             casaToken(TOKEN_OR);
         }
-        T(t2_tipo, t2_tamanho);
+        T(t2_tipo, t2_tamanho, t2_end);
         verificaOps(t1_tipo, t2_tipo, t1_tamanho, t2_tamanho, exps_op);
+
+        // saida << "\tmov ax, ds:[" << hex << exps_end << "]" << endl;
+        // saida << "\tmov bx, ds:[" << hex << t2_end << "]" << endl;
+        // if(exps_op == TOKEN_MAIS) saida << "\tadd ax, bx" << endl;
+        // else if(exps.op == TOKEN_MENOS) saida << "\tsub ax, bx" << endl;
+        // else {
+        //     //OR => a + b - (a * b)
+        //     saida << "\tmov cx,ax" << endl; // salva valor de AX em CX
+        //     saida << "\timul bx" << endl; // ax = a * b
+        //     saida << "\tadd bx, cx" << endl; // bx = a + b
+        //     saida << "\tsub bx, ax" << endl; // a + b - (a*b)
+        //     saida << "\tmov ax, bx" << endl; // move pro Ax o resultado
+        // }
+        
+        // exps_end = novoTemp()
+        // saida << "\tmov ds:[" << hex << exps_end << "], ax" << endl;
     }
 }
 
@@ -1124,16 +1211,17 @@ void ExpS(int &exps_tipo, int &exps_tamanho) {
 // (1) { exp_tipo = exps_tipo; exp.tamanho = exps.tamanho;  }
 // (2) { exp_tipo = boolean; exp.tamanho = 0 }
 // (3) { se nao(VerificaOps) entao ERRO }
-void Exp(int &exp_tipo, int &exp_tamanho) {
+void Exp(int &exp_tipo, int &exp_tamanho, int &exp_end) {
     // declarando variaveis que serão necessarias para o semantico
-    int exps1_tipo, exps1_tamanho, exps2_tipo, exps2_tamanho;
+    int exps1_tipo, exps1_tamanho, exps2_tipo, exps2_tamanho, exps1_end, exps2_end;
     int exp_op;
     contadorTemp = 0; //reiniciando contagem de temporarios
 
-    ExpS(exps1_tipo, exps1_tamanho);
+    ExpS(exps1_tipo, exps1_tamanho, exps1_end);
 
     exp_tipo = exps1_tipo;
     exp_tamanho = exps1_tamanho;
+    exp_end = exps1_end;
 
     if (reg.token == TOKEN_IGUAL || reg.token == TOKEN_MAIOR ||
         reg.token == TOKEN_MENOR || reg.token == TOKEN_DIF ||
@@ -1161,8 +1249,67 @@ void Exp(int &exp_tipo, int &exp_tamanho) {
         exp_tipo = TIPO_BOOLEAN;
         exp_tamanho = 0;
 
-        ExpS(exps2_tipo, exps2_tamanho);
+        ExpS(exps2_tipo, exps2_tamanho, exps2_end);
         verificaOps(exps1_tipo, exps2_tipo, exps1_tamanho, exps2_tamanho, exp_op);
+
+        // saida << "\tmov ax, ds:[" << hex << exp_end<< "]" << endl;
+        // saida << "\tmov bx, ds:[" << hex << exp2_end<< "]" << endl;
+        // saida << "\tcmp ax, bx" << endl;
+        // string RotVerdadeiro = novoRot()
+        // if (exp_op == TOKEN_IGUAL) saida << "\tje " << RotVerdadeiro << endl;
+        // else if (exp_op == TOKEN_DIF) saida << "\tjne " << RotVerdadeiro << endl;
+        // else if(exp_op == TOKEN_MENOR) saida << "\tjl " << RotVerdadeiro << endl;
+        // else if(exp_op == TOKEN_MAIOR) saida << "\tjg " << RotVerdadeiro << endl;
+        // else if(exp_op == TOKEN_MAIOR_IGUAL) saida << "\tjge " << RotVerdadeiro << endl;
+        // else saida << "\tjle " << RotVerdadeiro << endl;
+
+        // saida << "\tmov ax, 0" << endl;
+        // saida RotFim = novoRot()
+        // saida << "\tjmp " << RotFim << endl;
+        // saida << "\t" << RotVerdadeiro << ":" << endl;
+        // saida << "\tmov ax, 1" << endl;
+        // saida << "\t" << RotFim << ":" << endl;
+
+        // exp_end = novoTemp()
+        // exp_tipo = TIPO_BOOLEAN
+        // saida << "\tmov ds:[" << hex << exp_end<< "], ax" << endl;  
+
+        //mov ax, 1
+        //mov bx, ds:[exps1_end]
+        //mov cx, ds:[exps2_end]
+        //mov dx, 0
+        //comecoCmp:
+        //cmp bx, ax
+        //je Iguais:
+        //mov ax, 0 //se forem diferentes, ax recebe 0 e acaba o loop
+        //jmp fimCmp
+        //Iguais:
+        //cmp bx, '$'
+        //je fimCmp
+        //cmp cx '$'
+        //je fimCmp
+        //add dx, 1 //incrementa a posicao
+        //mov bx, exps1_end //mov end pra ax
+        //add bx, dx //soma a posicao
+        //mov cx, exps2_end //move o end pra bx
+        //add cx, dx // soma posicao
+        //mov bx, ds:[ax] //atualiza o char de ax
+        //mov cx, ds:[bx] // atualiza o char de bx
+        //jmp comecoCmp
+        //fimCmp:
+
+        // string 1 = aa$ string 2 aab$
+        // end1 = exp1.end end2 = exp2.end
+        // comeco:
+        // mov ax, end1.. mov bx, end2
+        // cmp
+        // jne rotfalso
+        // add end1 1, add end2 1
+        // j comeco
+        //
+        // rotfalso: mov .., 0
+
+
     }
 }
 
