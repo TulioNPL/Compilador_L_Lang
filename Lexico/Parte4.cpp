@@ -109,6 +109,12 @@ RegLex reg;
 // iniciando variavel global para memoria
 int contadorDados;
 
+//iniciando variavel global para temporarios
+int contadorTemp;
+
+//iniciando variavel global para rotulos
+int contadorRot;
+
 // iniciando variavel global para o arquivo de saida
 ofstream saida;
 
@@ -132,10 +138,13 @@ class TabelaSimbolos {
     void mostrar();
 };
 
+
+//Construtor
 TabelaSimbolos::TabelaSimbolos(int n) {
     this->num_posicoes = n;
     tabela = new list<Simbolo>[num_posicoes];
 }
+
 
 // metodo para atualizar tabela com os tipos dos identificadores
 void TabelaSimbolos::atualizar(string lex, int tipo, int tamanho, int classe, int end){
@@ -151,6 +160,7 @@ void TabelaSimbolos::atualizar(string lex, int tipo, int tamanho, int classe, in
     }
 }
 
+
 // retorna o token de um registro da tabela de símbolos
 int TabelaSimbolos::getToken(string lex, int pos) {
     list<Simbolo>::iterator i;
@@ -162,7 +172,8 @@ int TabelaSimbolos::getToken(string lex, int pos) {
     return -1;
 }
 
-//
+
+//Retorna o tamanho de um simbolo pesquisando pelo lexema
 int TabelaSimbolos::getTamanho(string lex, int pos) {
     list<Simbolo>::iterator i;
     for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
@@ -173,7 +184,8 @@ int TabelaSimbolos::getTamanho(string lex, int pos) {
     return -1;
 }
 
-//
+
+//Retorna o tipo de um simbolo pesquisando pelo lexema
 int TabelaSimbolos::getTipo(string lex, int pos) {
     list<Simbolo>::iterator i;
     for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
@@ -184,7 +196,8 @@ int TabelaSimbolos::getTipo(string lex, int pos) {
     return -1;
 }
 
-//
+
+//Retorna a classe de um simbolo pesquisando pelo lexema
 int TabelaSimbolos::getClasse(string lex, int pos) {
     list<Simbolo>::iterator i;
     for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
@@ -194,6 +207,7 @@ int TabelaSimbolos::getClasse(string lex, int pos) {
     }
     return -1;
 }
+
 
 // apenas para teste, mostra a tabela de símbolos inteira
 void TabelaSimbolos::mostrar() {
@@ -207,6 +221,7 @@ void TabelaSimbolos::mostrar() {
     }
 }
 
+
 // insere um registro na tabela de símbolos e retorna sua posição
 int TabelaSimbolos::inserir(string lex, int token) {
     Simbolo s = {};
@@ -218,6 +233,7 @@ int TabelaSimbolos::inserir(string lex, int token) {
     tabela[pos].push_back(s);
     return pos;
 }
+
 
 // pesquisa se existe uma entrada na tabela de símbolos
 // a tabela é encadeada para evitar colisões
@@ -244,6 +260,7 @@ int TabelaSimbolos::pesquisar(string lex) {
     return pos;
 }
 
+
 // função de hash: multiplica o valor do char de cada posição do lexema pelo
 // indice da sua posição na string então pega o resultado dessa soma mod numero
 // de posições da tabela
@@ -260,8 +277,10 @@ int TabelaSimbolos::hash(string lex) {
     return pos;
 }
 
+
 // inicializar tabela de simbolos (para ser variável global)
 TabelaSimbolos t(127);
+
 
 // metodo para inserir token
 void atualizarTabela(string lex, int tipo, int token, size_t tamanho) {
@@ -297,6 +316,7 @@ int linha = 1;
 
 // inicializar o char;
 char c;
+
 
 /*
 ----------------------------------------------------
@@ -666,6 +686,7 @@ void analisadorLexico() {
     }
 }
 
+
 //Metodo para verificar a compatibilidade de tipos nas operacoes *, /, %, , +, -, =, >, <, >=, <=, <> OR e AND
 void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t_op) {
     switch(t_op) {
@@ -799,6 +820,8 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
     }
 }
 
+
+//Verifica compatibilidade de tipos na declaracao
 bool verificaCompatibDec(int id_tipo, int const_tipo){
     if((id_tipo == TIPO_INT && const_tipo == TIPO_INT) 
         || (id_tipo == TIPO_CHAR && const_tipo == TIPO_CHAR)
@@ -808,6 +831,8 @@ bool verificaCompatibDec(int id_tipo, int const_tipo){
         return false;
 }
 
+
+//Verifica a compatibilidade de tipos no comando ReadLn
 bool verificaCompatibRead(int id_tipo, int id_tamanho, int id_classe) {
     if(id_classe == CLASSE_VAR) {
         if (id_tipo == TIPO_INT){
@@ -819,6 +844,8 @@ bool verificaCompatibRead(int id_tipo, int id_tamanho, int id_classe) {
     return false;
 }
 
+
+//Verifica a compatibilidade de tipos do comando Write
 bool verificaCompatibWrite(int exp_tipo, int exp_tamanho){
     if(exp_tipo == TIPO_INT){
         if(exp_tamanho == 0) return true;
@@ -829,6 +856,8 @@ bool verificaCompatibWrite(int exp_tipo, int exp_tamanho){
     return false;
 }
 
+
+//Verifica a compatibilidade de tipos na atribuicao
 bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tamanho){
     if(id_tipo == TIPO_INT){
         //confere se os inteiros manipulados sao escalares
@@ -848,6 +877,8 @@ bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tama
     return false;
 }
 
+
+//Verifica se o tamanho do vetor excede o permitido
 bool verificaTamanho(int size, int tipo){
     if(tipo == TIPO_INT || tipo == TIPO_BOOLEAN){
         if(size*2 <= 8000) return true;
@@ -871,6 +902,12 @@ void casaToken(int token_esperado) {
     }
 }
 
+
+/*
+	metodo printDec
+	recebe o tipo, classe, valor e tamanho da variavel declarada
+	e converte sua declaracao para masm
+*/
 void printDec(int tipo, int classe, string val, int tamanho){
     cout << tipo << " " << classe << " " << val << " " << tamanho << endl ;
 
@@ -938,10 +975,8 @@ Os comentários representam o símbolo representado pelo método
  as demais funções declaradas posteriormente */
 void Exp(int &exp_tipo, int &exp_tamanho);
 
-// F -> not F | "(" Exp ")" | CONST | ID [ "[" Exp "]" ]
 
 // F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (6)(4) [ "[" Exp (5) "]" ]
-
 // (1) { se (f1.tipo != boolean) entao ERRO; f.tipo = f1.tipo; f.valor = f1.valor; f.tamanho = f1.tamanho }
 // (2) { f.tipo = exp.tipo; f.tamanho = exp.tamanho; f.valor = exp.valor }
 // (3) { f.tipo = const.tipo; f.valor = const.valor;  se (const.tipo == inteiro) f.tamanho = 0 senao f.tamanho = const.tamanho }
@@ -1005,10 +1040,8 @@ void F(int &f_tipo, int &f_tamanho) {
     }
 }
 
-// T ->  F { ( * | / | % | and ) F }
 
 // T ->  F1 (1) { ( * (2) | / (3) | % (4) | and (5) ) F2 (6) }
-
 // (1) { t.tipo = f1.tipo; t.tamanho = f1.tamanho }
 // (2) { t.op = mult }
 // (3) { t.op = div }
@@ -1047,16 +1080,13 @@ void T(int &t_tipo, int &t_tamanho) {
     
 }
 
-// ExpS -> [ + | - ] T { ( + | - | or ) T }
 
 // ExpS -> [ + | - ] T1 (1) { ( + (2) | - (3) | or (4) ) T2 (5) }
-
 // (1) { exps.tipo = t1.tipo; exps_tamanho = t1.tamanho }
 // (2) { exps.op = add }
 // (3) { exps.op = sub }
 // (4) { exps.op = or; exps.tipo = boolean }
 // (5) {verificaOps}
-
 void ExpS(int &exps_tipo, int &exps_tamanho) {
     int exps_op;
     int t1_tipo, t1_tamanho, t2_tipo, t2_tamanho;
@@ -1089,9 +1119,8 @@ void ExpS(int &exps_tipo, int &exps_tamanho) {
     }
 }
 
-// Exp -> ExpS [ ( = | > | < | <> | <= | >= ) ExpS ]
-// Exp -> ExpS1 (1) [ ( = | > | < | <> | <= | >= ) (2) ExpS2 (3) ]
 
+// Exp -> ExpS1 (1) [ ( = | > | < | <> | <= | >= ) (2) ExpS2 (3) ]
 // (1) { exp_tipo = exps_tipo; exp.tamanho = exps.tamanho;  }
 // (2) { exp_tipo = boolean; exp.tamanho = 0 }
 // (3) { se nao(VerificaOps) entao ERRO }
@@ -1099,7 +1128,8 @@ void Exp(int &exp_tipo, int &exp_tamanho) {
     // declarando variaveis que serão necessarias para o semantico
     int exps1_tipo, exps1_tamanho, exps2_tipo, exps2_tamanho;
     int exp_op;
-    
+    contadorTemp = 0; //reiniciando contagem de temporarios
+
     ExpS(exps1_tipo, exps1_tamanho);
 
     exp_tipo = exps1_tipo;
@@ -1136,9 +1166,8 @@ void Exp(int &exp_tipo, int &exp_tamanho) {
     }
 }
 
-// Dec -> ( int | boolean | char ) ID [:= [-]CONST | "[" CONST "]"] {, ID [:= [-]CONST | "[" CONST "]"] } ; | final ID = [-]CONST ;
-// Dec -> ( int (1)| boolean (2)| char (3)) ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8) {, ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8)} ; | final (7) ID (10) = [-]CONST (9) ; (8)
 
+// Dec -> ( int (1)| boolean (2)| char (3)) ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8) {, ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8)} ; | final (7) ID (10) = [-]CONST (9) ; (8)
 // (1) { Dec.tipo = inteiro; dec.classe = classe_var }
 // (2) { Dec.tipo = boolean; dec.classe = classe_var }
 // (3) { Dec.tipo = char; dec.classe = classe_var }
@@ -1325,6 +1354,7 @@ void Cmd();
 void CmdP();
 void CmdFor();
 
+
 // BlocoCmd -> "{" { Cmd } "}"
 void BlocoCmd() {
     casaToken(TOKEN_ABRE_CHAVE);
@@ -1337,9 +1367,8 @@ void BlocoCmd() {
     casaToken(TOKEN_FECHA_CHAVE);
 }
 
-// CmdAtr -> ID ["["Exp"]"] := Exp
-// CmdAtr -> ID (1)(2) ["[" Exp (3) "]"] := Exp1 (4)
 
+// CmdAtr -> ID (1)(2) ["[" Exp (3) "]"] := Exp1 (4)
 // (1) { if id.tipo == vazio then ERRO else atr.tipo = id_tipo; }
 // (2) { if id.classe == classe_const then ERRO }
 // (3) { se nao(exp.tipo == tipo_int) entao erro }
@@ -1437,9 +1466,8 @@ void CmdRep() {
     }
 }
 
-// CmdIf -> if"(" Exp ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
-// CmdIf -> if"(" Exp (1) ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
 
+// CmdIf -> if"(" Exp (1) ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
 // (1) -> { se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO }
 void CmdIf() {
 
@@ -1476,12 +1504,12 @@ void CmdIf() {
     }
 }
 
+
 // CmdNull -> ;
 void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
 
-// CmdRead -> readln "(" ID ["[" Exp "]"] ")"
-// CmdRead -> readln "(" ID (2) ["[" Exp (3) "]"] (1) ")"
 
+// CmdRead -> readln "(" ID (2) ["[" Exp (3) "]"] (1) ")"
 // (1) -> { se id.tipo != int || char || string e for vetor entao ERRO }
 // (2) -> { se id.tipo == VAZIO entao ERRO}
 // (3) -> { se exp.tipo != int && exp.tamanho > 0 entao ERRO }
@@ -1513,9 +1541,8 @@ void CmdRead() {
     casaToken(TOKEN_FECHA_PAREN);
 }
 
-// CmdWrite -> (write|writeln)"(" Exp {, Exp} ")"
-// CmdWrite -> (write|writeln)"(" Exp (1) {, Exp (1) } ")"
 
+// CmdWrite -> (write|writeln)"(" Exp (1) {, Exp (1) } ")"
 // (1) { if exp.tipo != int || char || string }
 void CmdWrite() {
     int exp_tipo, exp1_tipo, exp_tamanho, exp1_tamanho;
@@ -1541,6 +1568,7 @@ void CmdWrite() {
     }
     casaToken(TOKEN_FECHA_PAREN);
 }
+
 
 //CmdFor -> CmdAtr | CmdWrite | CmdRead | CmdFor | CmdIf
 void CmdFor() {
@@ -1569,6 +1597,7 @@ void CmdP() {
     }
 }
 
+
 // Cmd -→ CmdP ; | CmdFor | CmdIf | CmdNull
 void Cmd() {
     if (reg.token == TOKEN_FOR) {
@@ -1586,6 +1615,7 @@ void Cmd() {
         casaToken(TOKEN_PONTO_VIRG);
     }
 }
+
 
 // Prog -> { Dec } main BlocoCmd EOF
 void Prog() {
@@ -1616,6 +1646,7 @@ void Prog() {
     saida << "END strt" << endl;
 }
 
+
 /*
 ----------------------------------------------------
 Método principal
@@ -1626,6 +1657,9 @@ Executa os analisadores a partir do primeiro token recebido
 int main() {
     //inicializando memoria
     contadorDados = 0x4000;
+
+	//inicializando contador de rotulos
+	contadorRot = 0;
 
     //inicializando arquivo de saida
     saida.open("saida.asm");
