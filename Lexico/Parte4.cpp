@@ -88,6 +88,7 @@ struct Simbolo {
     int tipo;
     int classe;
     int tamanho;
+    int endereco;
 };
 
 // definição da estrutura do registro léxico para o retorno do analisador léxico
@@ -105,11 +106,18 @@ string alfabeto = "_.,;:(){}[]+-/%@!?><=*$";
 // iniciando o registro lexico variável global
 RegLex reg;
 
+// iniciando variavel global para memoria
+int contadorDados;
+
+// iniciando variavel global para o arquivo de saida
+ofstream saida;
+
 // classe da tabela de simbolos
 class TabelaSimbolos {
     int num_posicoes;
 
     list<Simbolo> *tabela;
+    int pos_inicial = 0x4000;
 
    public:
     TabelaSimbolos(int n);  // Construtor
@@ -120,7 +128,7 @@ class TabelaSimbolos {
     int getTamanho(string lex, int pos);
     int getTipo(string lex, int pos);
     int getClasse(string lex, int pos);
-    void atualizar(string lex, int tipo, int tamanho, int classe);
+    void atualizar(string lex, int tipo, int tamanho, int classe, int end);
     void mostrar();
 };
 
@@ -130,7 +138,7 @@ TabelaSimbolos::TabelaSimbolos(int n) {
 }
 
 // metodo para atualizar tabela com os tipos dos identificadores
-void TabelaSimbolos::atualizar(string lex, int tipo, int tamanho, int classe){
+void TabelaSimbolos::atualizar(string lex, int tipo, int tamanho, int classe, int end){
     int pos = pesquisar(lex);
     list<Simbolo>::iterator i;
     for (i = tabela[pos].begin(); i != tabela[pos].end(); i++) {
@@ -138,6 +146,7 @@ void TabelaSimbolos::atualizar(string lex, int tipo, int tamanho, int classe){
             i->tamanho = tamanho;
             i->classe = classe;
             i->tipo = tipo;
+            i->endereco = end;
         }
     }
 }
@@ -192,9 +201,9 @@ void TabelaSimbolos::mostrar() {
         cout << i;
         list<Simbolo>::iterator x;
         for (x = tabela[i].begin(); x != tabela[i].end(); x++) {
-            cout << " --> " << x->lexema << " " << x->token;
+            cout << " --> " << x->lexema << " " << x->token << " , endereco: " << hex << x->endereco;
         }
-        cout << endl;
+        cout << dec << endl;
     }
 }
 
@@ -204,6 +213,7 @@ int TabelaSimbolos::inserir(string lex, int token) {
     s.lexema = lex;
     s.token = token;
     s.tipo = TIPO_VAZIO;
+    s.tamanho = 0;
     int pos = hash(lex);
     tabela[pos].push_back(s);
     return pos;
@@ -861,6 +871,61 @@ void casaToken(int token_esperado) {
     }
 }
 
+void printDec(int tipo, int classe, string val, int tamanho){
+    cout << tipo << " " << classe << " " << val << " " << tamanho << endl ;
+
+    if(classe == CLASSE_CONST){
+        if(tipo == TIPO_INT) {
+            saida << "\tsword " << val << "\t;const. Int em " << hex << contadorDados << endl;
+            contadorDados += 2;
+
+        } else if(tipo == TIPO_CHAR) {
+            saida << "\tbyte " << val << "\t;const. Char em " << hex << contadorDados << endl;
+            contadorDados += 1;
+
+        } else if(tipo == TIPO_STRING) {
+            string s = val.substr(1, val.length() - 2);
+            saida << "\tbyte \"" << s << "$\" \t;const. String em " << hex << contadorDados << endl;
+            contadorDados += tamanho + 1;
+
+        } else { //Bool
+            saida << "\tsword " << (!val.compare("TRUE")?"1":"0") << "\t;const. Bool em " << hex << contadorDados << endl;
+            contadorDados += 2;
+        }
+    } else {
+        if(tamanho > 0){
+            if(tipo == TIPO_INT) {
+                saida << "\tsword " << tamanho << " DUP(?) \t;var. Vet Int em " << hex << contadorDados << endl;
+                contadorDados += 2*tamanho;
+
+            } else if(tipo == TIPO_CHAR) {
+                saida << "\tbyte " << tamanho << " DUP(?) \t;var. Vet Char em " << hex << contadorDados << endl;
+                contadorDados += tamanho;
+
+            } else { //Bool
+                saida << "\tsword " << tamanho << " DUP(?) \t;var. Vet Bool em " << hex << contadorDados << endl;
+                contadorDados += 2*tamanho; 
+            }
+            
+        } else {
+            if(tipo == TIPO_INT) {
+                saida << "\tsword " << (!val.compare("VAZIO")?"?":val) << " \t;var. Int em " << hex << contadorDados << endl;
+                contadorDados += 2;
+
+            } else if(tipo == TIPO_CHAR) {
+                saida << "\tbyte " << (!val.compare("VAZIO")?"?":val) << " \t;var. Char em " << hex << contadorDados << endl;
+                contadorDados += 1;
+                
+            } else { //Bool
+                saida << "\tsword " << (!val.compare("VAZIO")?"?":(!val.compare("TRUE")?"1":"0")) << " \t;var. Bool em " << hex << contadorDados << endl;
+                contadorDados += 2;
+            }
+
+        }
+    }
+        
+}
+
 /*
 ----------------------------------------------------
 Analisador Sintático
@@ -1090,7 +1155,7 @@ void Dec() {
     int id_tipo, id_classe, id_pos, id_tamanho;
     string id_lex;
     int const_tipo, const_tam; 
-    string const_val;
+    string const_val = "VAZIO";
 
     if (reg.token == TOKEN_FINAL) {
         dec_classe = CLASSE_CONST;
@@ -1102,8 +1167,6 @@ void Dec() {
         id_tamanho = t.getTamanho(id_lex, id_pos);
         id_tipo = t.getTipo(id_lex, id_pos);
         id_classe = t.getClasse(id_lex, id_pos);
-
-        
 
 		//verifica a unicidade
         if(id_tipo != TIPO_VAZIO){
@@ -1124,7 +1187,11 @@ void Dec() {
         id_tipo = const_tipo;
         casaToken(TOKEN_CONST);
         casaToken(TOKEN_PONTO_VIRG);
-        t.atualizar(id_lex, id_tipo, id_tamanho, id_classe);
+
+        t.atualizar(id_lex, id_tipo, id_tamanho, id_classe, contadorDados);
+        printDec(id_tipo, id_classe, const_val, const_tam);
+
+        
     } else {
         if (reg.token == TOKEN_INT) {
             dec_tipo = TIPO_INT;
@@ -1189,8 +1256,12 @@ void Dec() {
             casaToken(TOKEN_CONST);
             casaToken(TOKEN_FECHA_COLCH);
         }
-        t.atualizar(id_lex, id_tipo, id_tamanho, id_classe);
+
+        t.atualizar(id_lex, id_tipo, id_tamanho, id_classe, contadorDados);
+        printDec(id_tipo, id_classe, const_val, id_tamanho);
+
         while (reg.token == TOKEN_VIRG) {
+            const_val = "VAZIO"; // resetando o buffer;
             casaToken(TOKEN_VIRG);
             
 			// retorna os dados do identificador lido
@@ -1240,10 +1311,13 @@ void Dec() {
                 casaToken(TOKEN_CONST);
                 casaToken(TOKEN_FECHA_COLCH);
             }
-            t.atualizar(id_lex, id_tipo, id_tamanho, id_classe);
+            t.atualizar(id_lex, id_tipo, id_tamanho, id_classe, contadorDados);
+            printDec(id_tipo, id_classe, const_val, id_tamanho);
         }
         casaToken(TOKEN_PONTO_VIRG);
     }
+
+    
 }
 
 // pré declarando comando Cmd(); e CmdP();
@@ -1515,12 +1589,31 @@ void Cmd() {
 
 // Prog -> { Dec } main BlocoCmd EOF
 void Prog() {
+    //Escrever inicio do segmento de dados
+    saida << "dseg SEGMENT PUBLIC\n";
+    saida << "\tbyte " << hex << contadorDados << " DUP (?)\n";
+    
+    //Ciclo de declaracoes
     while (reg.token == TOKEN_INT || reg.token == TOKEN_CHAR ||
            reg.token == TOKEN_BOOL || reg.token == TOKEN_FINAL) {
         Dec();
     }
+    //Escrever fim do segmento de dados
+    saida << "dseg ENDS" << endl;
+
+    // inicio segmento codigo
+    saida << "cseg SEGMENT PUBLIC" << endl;
+    saida << "\tASSUME CS:cseg, DS:dseg" << endl << endl;
+    saida << "strt:" << endl;
+    saida << "\tmov ax, dseg" << endl << "\tmov ds, ax" << endl;
+
+
+
     casaToken(TOKEN_MAIN);
     BlocoCmd();
+
+    saida << "cseg ENDS" << endl;
+    saida << "END strt" << endl;
 }
 
 /*
@@ -1531,6 +1624,12 @@ Executa os analisadores a partir do primeiro token recebido
 ----------------------------------------------------
 */
 int main() {
+    //inicializando memoria
+    contadorDados = 0x4000;
+
+    //inicializando arquivo de saida
+    saida.open("saida.asm");
+
     // iniciando tabela de simbolos
     t.inserir("final", TOKEN_FINAL);
     t.inserir("int", TOKEN_INT);
@@ -1575,6 +1674,8 @@ int main() {
         analisadorLexico();
         Prog();
         casaToken(TOKEN_EOF);
+        saida.close();
+        t.mostrar();
     } catch (int err) {
         switch(err){
             case ERR_TOKEN:
