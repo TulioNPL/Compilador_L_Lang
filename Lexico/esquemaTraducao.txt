@@ -1,5 +1,4 @@
 Dec -> ( int (1)| boolean (2)| char (3)) ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8) {, ID (4) [:= [-]CONST (5) | "[" CONST (6) "]" ] (8)} ; | final (7) ID (10) = [-]CONST (9) ; (8)
-
 (1) { 
   Dec.tipo = inteiro; dec.classe = classe_var 
 }
@@ -97,8 +96,7 @@ F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
 }
 
 
-// T ->  F1 (1) { ( * (2) | / (3) | % (4) | and (5) ) F2 (6) }
-
+T ->  F1 (1) { ( * (2) | / (3) | % (4) | and (5) ) F2 (6) }
 (1) { 
     t.tipo = f1.tipo; 
     t.tamanho = f1.tamanho; 
@@ -141,7 +139,7 @@ F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
 
 
 
-// ExpS -> [ + | - (6)] T1 (1) { ( + (2) | - (3) | or (4) ) T2 (5) }
+ExpS -> [ + | - (6)] T1 (1) { ( + (2) | - (3) | or (4) ) T2 (5) }
 (1) {
      exps.tipo = t1.tipo; 
      exps_tamanho = t1.tamanho;
@@ -187,8 +185,7 @@ F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
 
 
 
-// Exp -> ExpS1 (1) [ ( = | > | < | <> | <= | >= ) (2) ExpS2 (3) ]
-
+Exp -> ExpS1 (1) [ ( = | > | < | <> | <= | >= ) (2) ExpS2 (3) ]
 (1) {
      exp_tipo = exps1_tipo; 
      exp.tamanho = exps1.tamanho; 
@@ -218,12 +215,42 @@ F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
     senao 
         jle RotVerdadeiro
 
-    mov AX, 0
-    RotFim = novoRot()
-    jmp RotFim
-    RotVerdadeiro:
-    mov AX, 1
-    RotFim:
+    se (exps1.tipo == STRING || exps1.tipo == Char[] && exps2.tipo == STRING || exps2.tipo == Char[]) entao
+        string comecoCmp, iguais, fimCmp;
+        comecoCmp = novoRot();
+        iguais = novoRot();
+        fimCmp = novoRot();
+
+        mov ax, 1
+        mov bx, ds:[exps1_end]
+        mov cx, ds:[exps2_end]
+        mov dx, 0
+        comecoCmp:
+        cmp bx, ax
+        je iguais:
+        mov ax, 0 //se forem diferentes, ax recebe 0 e acaba o loop
+        jmp fimCmp
+        iguais:
+        cmp bx, '$'
+        je fimCmp
+        cmp cx '$'
+        je fimCmp
+        add dx, 1 //incrementa a posicao
+        mov bx, exps1_en //mov end pra ax
+        add bx, dx //soma a posicao
+        mov cx, exps2_en //move o end pra bx
+        add cx, dx // soma posicao
+        mov bx, ds:[ax] //atualiza o char de ax
+        mov cx, ds:[bx] // atualiza o char de bx
+        jmp comecoCmp
+        fimCmp:
+    senao 
+        mov AX, 0
+        RotFim = novoRot()
+        jmp RotFim
+        RotVerdadeiro:
+        mov AX, 1
+        RotFim:
 
     exp_end = novoTemp()
     exp_tipo = TIPO_BOOLEAN
@@ -233,51 +260,93 @@ F -> not F1 (1) | "(" Exp (2) ")" | CONST (3) | ID (4) [ "[" Exp (5) "]" ]
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
 
-// CmdAtr -> ID (1) ["[" Exp (2) "]"] := Exp1 (3)
-
+CmdAtr -> ID (1) ["[" Exp (2) "]"] := Exp1 (3)
 (1) { 
-  se id.tipo == vazio entao ERRO "id não declarado" 
-  senao atr.tipo = id_tipo; 
+    se id.tipo == vazio entao ERRO "id não declarado" 
+    senao atr.tipo = id_tipo; 
+    se id.classe == classe_const then ERRO "classe incompativel"
 
-  se id.classe == classe_const then ERRO "classe incompativel"
+    mov ax, id_end // move id pra AX
+  
 }
 (2) { 
-  se (exp.tipo != tipo_int) entao erro "tipos incompativeis"
+    se (exp.tipo != tipo_int) entao erro "tipos incompativeis"
+    add ax , ds:[exp.end] // adiciona valor da expressao pra AX para calcular posicao
+    se atr_tipo == TIPO_INT entao
+        add ax, ds:[exp.end]
 }
 (3) { 
   se (nao compativel(atr.tipo, exp1.tipo)) entao ERRO "tipos incompativeis"
   senao
-    mov ax , ds:[exp.end]
-    se atr_tipo == TIPO_INT entao
-        add ax, ds:[exp.end]
-    add ax, id.end
     mov bx, ds:[exp1.end]
     mov ds:[ax], bx
 }
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
-// CmdWrite -> (write|writeln)"(" Exp (1) {, Exp (1) } ")"
-// CmdWrite -> write"(" Exp {, Exp } ")" | writeln"(" Exp {, Exp } ")" (2) <- fazer dps kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+CmdWrite -> (write|writeln(2))"(" Exp (1) {, Exp (1) } ")" (3)
+(1) { 
+    se exp.tipo != int || char || string entao ERRO  "Tipos incompativeis"
+    senao
+            mov di, string.end ;end. string temp.
+            mov cx, 0 ;contador
+            cmp ax,0 ;verifica sinal
+            jge R0 ;salta se número positivo
+            mov bl, 2Dh ;senão, escreve sinal –
+            mov ds:[di], bl
+            add di, 1 ;incrementa índice
+            neg ax ;toma módulo do número
+        R0 = novoRot()
+        R0:
+            mov bx, 10 ;divisor
+        R1 = novoRot()
+        R1:
+            add cx, 1 ;incrementa contador
+            mov dx, 0 ;estende 32bits p/ div.
+            idiv bx ;divide DXAX por BX
+            push dx ;empilha valor do resto
+            cmp ax, 0 ;verifica se quoc. é 0
+            jne R1 ;se não é 0, continua
+            ;agora, desemp. os valores e escreve o string
+        R2 = novoRot()
+        R2:
+            pop dx ;desempilha valor
+            add dx, 30h ;transforma em caractere
+            mov ds:[di],dl ;escreve caractere
+            add di, 1 ;incrementa base
+            add cx, -1 ;decrementa contador
+            cmp cx, 0 ;verifica pilha vazia
+            jne R2 ;se não pilha vazia, loop
+            ;grava fim de string
+            mov dl, 024h ;fim de string
+            mov ds:[di], dl ;grava '$'
+            ;exibe string
+            mov dx, string.end
+            mov ah, 09h
+            int 21h
 
-// (1) { if exp.tipo != int || char || string entao ERRO }
+    se linha entao //imprime quebra de linha
+        mov ah, 02h
+        mov dl, 0Dh
+        int 21h
+        mov DL, 0Ah
+        int 21h
+}
+(2) { line = true }
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
 
 CmdRead -> readln "(" ID (2) ["[" Exp (3) "]"] (1) ")"
-
 (1) -> { se id.tipo != int || char || string e for vetor entao ERRO }
 (2) -> { se id.tipo == VAZIO entao ERRO}
 (3) -> { se exp.tipo != int && exp.tamanho > 0 entao ERRO }
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
 CmdIf -> if"(" Exp (1) ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
-
 (1) -> { se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO }
 
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
 CmdRep -> for"(" [CmdFor {, CmdFor}]; Exp (1); [CmdFor {, CmdFor}] ")" (Cmd | BlocoCmd)
-
 (1) -> { se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO }
 
 _______________________________________________________________________________________________________________________________________________________________________________________________________
