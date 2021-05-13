@@ -1,4 +1,5 @@
-boolean a;
+int a;
 main {
-    a := not(2 < (2 * 3)) or ((2 < 3) and (3 < 4));
+    a := 6969;
+    write(a);
 }

@@ -929,7 +929,7 @@ void casaToken(int token_esperado) {
 }
 
 
-/*
+ /*
 	metodo printDec
 	recebe o tipo, classe, valor e tamanho da variavel declarada
 	e converte sua declaracao para masm
@@ -1721,15 +1721,71 @@ void CmdRead() {
 }
 
 
+void printWrite(int tipo, int tamanho, int end, bool wln) {
+    string R0, R1, R2;
+
+    if (tipo != TIPO_INT && tipo != TIPO_CHAR && tipo != TIPO_STRING) throw  ERR_TIPO;
+    else {
+        if(tipo == TIPO_INT) {
+            R0 = novoRot();
+            R1 = novoRot();
+            R2 = novoRot();
+            int string_temp = novoTemp(TIPO_CHAR);
+            saida << "\tmov di, " << string_temp << endl; //end. string temp.
+            saida << "\tmov cx, 0" << endl; //contador
+            saida << "\tcmp ax,0" << endl; //verifica sinal
+            saida << "\tjge " << R0 << endl; //salta se número positivo
+            saida << "\tmov bl, 2Dh" << endl; //senão, escreve sinal –
+            saida << "\tmov ds:[di], bl" << endl;
+            saida << "\tadd di, 1" << endl; //incrementa índice
+            saida << "\tneg ax" << endl; //toma módulo do número
+            saida << R0 << ":" << endl;
+            saida << "\tmov bx, 10" << endl; //divisor
+            saida << R1 << ":" << endl;
+            saida << "\tadd cx, 1" << endl; //incrementa contador
+            saida << "\tmov dx, 0" << endl; //estende 32bits p/ div.
+            saida << "\tidiv bx" << endl; //divide DXAX por BX
+            saida << "\tpush dx" << endl; //empilha valor do resto
+            saida << "\tcmp ax, 0" << endl; //verifica se quoc. é 0
+            saida << "\tjne " << R1 << endl; //se não é 0, continua
+
+            //agora, desemp. os valores e escreve o string
+            saida << R2 << ":" << endl; 
+            saida << "\tpop dx" << endl;  //desempilha valor
+            saida << "\tadd dx, 30h" << endl;  //transforma em caractere
+            saida << "\tmov ds:[di],dl" << endl;  //escreve caractere
+            saida << "\tadd di, 1" << endl;  //incrementa base
+            saida << "\tadd cx, -1" << endl;  //decrementa contador
+            saida << "\tcmp cx, 0" << endl;  //verifica pilha vazia
+            saida << "\tjne " << R2 << endl;  //se não pilha vazia, loop
+
+            //grava fim de string
+            saida << "\tmov dl, 024h" << endl;  //fim de string
+            saida << "\tmov ds:[di], dl" << endl;  //grava '$'
+
+            //exibe string
+            saida << "\tmov dx, " << string_temp  << endl; 
+            saida << "\tmov ah, 09h" << endl; 
+            saida << "\tint 21h" << endl; 
+            contadorTemp = 0;
+        } else {
+            //imprimir string normalmente
+        }
+    }
+}
+
 // CmdWrite -> (write|writeln)"(" Exp (1) {, Exp (1) } ")"
 // (1) { if exp.tipo != int || char || string }
 void CmdWrite() {
+    saida << ";cmdWrite()" << endl;
     int exp_tipo, exp1_tipo, exp_tamanho, exp1_tamanho, exp_end, exp1_end;
+    bool wln = false;
 
     if (reg.token == TOKEN_WRITE) {
         casaToken(TOKEN_WRITE);
     } else {
         casaToken(TOKEN_WRITELN);
+        wln = true;
     }
 
     casaToken(TOKEN_ABRE_PAREN);
@@ -1738,6 +1794,7 @@ void CmdWrite() {
     if(!verificaCompatibWrite(exp_tipo, exp_tamanho)){
         throw ERR_TIPO;
     }
+    printWrite(exp_tipo, exp_tamanho, exp_end, wln);
 
     while (reg.token == TOKEN_VIRG) {
         casaToken(TOKEN_VIRG);
@@ -1746,8 +1803,17 @@ void CmdWrite() {
         if(!verificaCompatibWrite(exp1_tipo, exp1_tamanho)){
             throw ERR_TIPO;
         }   
+        printWrite(exp_tipo, exp_tamanho, exp_end, wln);
     }
     casaToken(TOKEN_FECHA_PAREN);
+
+    if(wln) { //imprime quebra de linha
+        saida << "\tmov ah, 02h" << endl;
+        saida << "\tmov dl, 0Dh" << endl;
+        saida << "\tint 21h" << endl;
+        saida << "\tmov DL, 0Ah" << endl;
+        saida << "\tint 21h" << endl;
+    }
 }
 
 
@@ -1823,6 +1889,9 @@ void Prog() {
     casaToken(TOKEN_MAIN);
     BlocoCmd();
 
+    saida << "\t;fimProg" << endl;
+    saida << "\tmov ah, 4Ch" << endl;
+    saida << "\tint 21h" << endl;
     saida << "cseg ENDS" << endl;
     saida << "END strt" << endl;
 }
