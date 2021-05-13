@@ -1581,8 +1581,6 @@ void CmdAtr() {
 
     if(!(verificaCompatibAtr(atr_tipo, exp2_tipo, id_tamanho, exp2_tamanho))) throw ERR_TIPO;
     else {
-        
-        
         saida << "\tmov ax, DS:[" << exp2_end << "]" << endl;
         saida << "\tmov DS:[si], ax" << endl;
     }
@@ -1764,13 +1762,17 @@ void printWrite(int tipo, int tamanho, int end, bool wln) {
             saida << "\tmov ds:[di], dl" << endl;  //grava '$'
 
             //exibe string
-            saida << "\tmov dx, " << string_temp  << endl; 
-            saida << "\tmov ah, 09h" << endl; 
-            saida << "\tint 21h" << endl; 
-            contadorTemp = 0;
+            saida << "\tmov dx, " << string_temp << endl; 
+            
+            
         } else {
             //imprimir string normalmente
+            saida << "\tmov dx, " << dec << end << endl; 
         }
+
+        saida << "\tmov ah, 09h" << endl; 
+        saida << "\tint 21h" << endl; 
+        contadorTemp = 0;
     }
 }
 
