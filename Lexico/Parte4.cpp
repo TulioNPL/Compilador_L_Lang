@@ -78,6 +78,8 @@ using namespace std;
 #define ERR_TAMANHO -7 //usado para erro de tamanho maior que o esperado
 #define ERR_CLASSE -8 // usado para erro de classe errada
 
+#define POS_TEMPORARIOS 0
+
 
 
 // Definição da estrutura dos símbolos para serem inseridos na tabela de
@@ -110,7 +112,7 @@ RegLex reg;
 int contadorDados;
 
 //iniciando variavel global para temporarios
-int contadorTemp = 0; // inicia em 0
+int contadorTemp = POS_TEMPORARIOS; // inicia em 0
 
 //iniciando variavel global para rotulos
 int contadorRot = 0;
@@ -241,9 +243,8 @@ void TabelaSimbolos::mostrar() {
         cout << i;
         list<Simbolo>::iterator x;
         for (x = tabela[i].begin(); x != tabela[i].end(); x++) {
-            cout << " --> " << x->lexema << " " << x->token << " , endereco: " << hex << x->endereco;
+            cout << " --> " << x->lexema << " " << x->token << " , endereco: " << x->endereco;
         }
-        cout << dec << endl;
     }
 }
 
@@ -891,7 +892,7 @@ bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tama
         if(exp_tipo == TIPO_INT && id_tamanho == 0 && exp_tamanho == 0) return true;
     } else if (id_tipo == TIPO_CHAR){
         if(id_tamanho > 0) { // se ID for vetor
-            if(exp_tipo == TIPO_STRING && exp_tamanho <= (id_tamanho-1)) return true;
+            if(exp_tipo == TIPO_STRING && exp_tamanho -1 <= id_tamanho)return true;
             else if(exp_tipo == TIPO_CHAR && exp_tamanho <= id_tamanho) return true; 
         } else { // se ID for escalar
             if(exp_tipo == TIPO_CHAR && exp_tamanho == 0) return true;
@@ -935,52 +936,51 @@ void casaToken(int token_esperado) {
 	e converte sua declaracao para masm
 */
 void printDec(int tipo, int classe, string val, int tamanho){
-    cout << tipo << " " << classe << " " << val << " " << tamanho << endl ;
 
     if(classe == CLASSE_CONST){
         if(tipo == TIPO_INT) {
-            saida << "\tsword " << val << "\t;const. Int em " << hex << contadorDados << endl;
+            saida << "\tsword " << val << "\t;const. Int em "  << contadorDados << endl;
             contadorDados += 2;
 
         } else if(tipo == TIPO_CHAR) {
-            saida << "\tbyte " << val << "\t;const. Char em " << hex << contadorDados << endl;
+            saida << "\tbyte " << val << "\t;const. Char em "  << contadorDados << endl;
             contadorDados += 1;
 
         } else if(tipo == TIPO_STRING) {
             string s = val.substr(1, val.length() - 2);
-            saida << "\tbyte \"" << s << "$\" \t;const. String em " << hex << contadorDados << endl;
+            saida << "\tbyte \"" << s << "$\" \t;const. String em "  << contadorDados << endl;
             contadorDados += tamanho + 1;
 
         } else { //Bool
-            saida << "\tsword " << (!val.compare("TRUE")?"1":"0") << "\t;const. Bool em " << hex << contadorDados << endl;
+            saida << "\tsword " << (!val.compare("TRUE")?"1":"0") << "\t;const. Bool em "  << contadorDados << endl;
             contadorDados += 2;
         }
     } else {
         if(tamanho > 0){
             if(tipo == TIPO_INT) {
-                saida << "\tsword " << tamanho << " DUP(?) \t;var. Vet Int em " << hex << contadorDados << endl;
+                saida << "\tsword " << tamanho << " DUP(?) \t;var. Vet Int em "  << contadorDados << endl;
                 contadorDados += 2*tamanho;
 
             } else if(tipo == TIPO_CHAR) {
-                saida << "\tbyte " << tamanho << " DUP(?) \t;var. Vet Char em " << hex << contadorDados << endl;
+                saida << "\tbyte " << tamanho << " DUP(?) \t;var. Vet Char em "  << contadorDados << endl;
                 contadorDados += tamanho;
 
             } else { //Bool
-                saida << "\tsword " << tamanho << " DUP(?) \t;var. Vet Bool em " << hex << contadorDados << endl;
+                saida << "\tsword " << tamanho << " DUP(?) \t;var. Vet Bool em " << contadorDados << endl;
                 contadorDados += 2*tamanho; 
             }
             
         } else {
             if(tipo == TIPO_INT) {
-                saida << "\tsword " << (!val.compare("VAZIO")?"?":val) << " \t;var. Int em " << hex << contadorDados << endl;
+                saida << "\tsword " << (!val.compare("VAZIO")?"?":val) << " \t;var. Int em " << contadorDados << endl;
                 contadorDados += 2;
 
             } else if(tipo == TIPO_CHAR) {
-                saida << "\tbyte " << (!val.compare("VAZIO")?"?":val) << " \t;var. Char em " << hex << contadorDados << endl;
+                saida << "\tbyte " << (!val.compare("VAZIO")?"?":val) << " \t;var. Char em " << contadorDados << endl;
                 contadorDados += 1;
                 
             } else { //Bool
-                saida << "\tsword " << (!val.compare("VAZIO")?"?":(!val.compare("TRUE")?"1":"0")) << " \t;var. Bool em " << hex << contadorDados << endl;
+                saida << "\tsword " << (!val.compare("VAZIO")?"?":(!val.compare("TRUE")?"1":"0")) << " \t;var. Bool em " << contadorDados << endl;
                 contadorDados += 2;
             }
 
@@ -1057,12 +1057,13 @@ void F(int &f_tipo, int &f_tamanho, int &f_end) {
             saida << "\tmov DS:[" << dec << f_end << "], ax" << endl;
         } 
         else { //Const eh string
-            f_tamanho = const_tamanho;
+            f_tamanho = const_tamanho; 
+            int tamanho_string = f_tamanho - 2 + 1; // -2 das aspas, +1 do $
             saida << "dseg SEGMENT PUBLIC" << endl;
-            saida << "\tbyte " << "\"" << reg.lexema.substr(1,reg.lexema.length() - 2) << "$\"" << endl; 
+            saida << "\tbyte " << "\"" << reg.lexema.substr(1,reg.lexema.length() - 2) << "$\" \t;const. String em "  << contadorDados << endl; 
             saida << "dseg ENDS" << endl;
             f_end = contadorDados;
-            contadorDados += const_tamanho;
+            contadorDados += tamanho_string;
         }
 
         casaToken(TOKEN_CONST);
@@ -1092,12 +1093,12 @@ void F(int &f_tipo, int &f_tamanho, int &f_end) {
             }
             f_tamanho = exp_tamanho;
             f_end = novoTemp(f_tipo);
-            saida << "\tmov bx, DS:[" << dec << exp_end<< "]" << endl;
+            saida << "\tmov bx, DS:[" << exp_end<< "]" << endl;
             if(f_tipo == TIPO_INT) 
-                saida << "\tadd bx, DS:[" << dec << exp_end << "]" << endl;
-            saida << "\tadd bx, " << hex << id_end << endl;
+                saida << "\tadd bx, DS:[" << exp_end << "]" << endl;
+            saida << "\tadd bx, "  << id_end << "" << endl;
             saida << "\tmov ax, DS:[bx]" << endl;
-            saida << "\tmov DS:[" << dec << f_end << "], ax" << endl;
+            saida << "\tmov DS:[" << f_end << "], ax" << endl;
             casaToken(TOKEN_FECHA_COLCH);
         }
     }
@@ -1140,8 +1141,8 @@ void T(int &t_tipo, int &t_tamanho, int &t_end) {
         F(f2_tipo, f2_tamanho, f2_end);
         verificaOps(f1_tipo, f2_tipo, f1_tamanho, f2_tamanho, t_op);
         
-        saida << "\tmov ax, DS:[" << dec << t_end << "]" << endl;
-        saida << "\tmov bx, DS:[" << dec << f2_end<< "]" << endl;
+        saida << "\tmov ax, DS:[" << t_end << "]" << endl;
+        saida << "\tmov bx, DS:[" << f2_end<< "]" << endl;
         if (t_op == TOKEN_ASTER) saida << "\timul bx" << endl;
         else if(t_op == TOKEN_BARRA) { 
             saida << "\tcwd" << endl;
@@ -1154,7 +1155,7 @@ void T(int &t_tipo, int &t_tamanho, int &t_end) {
             
 
         t_end = novoTemp(t_tipo);
-        saida << "\tmov DS:[" << dec << t_end << "], ax" << endl;
+        saida << "\tmov DS:[" << t_end << "], ax" << endl;
 
     }
     
@@ -1185,9 +1186,9 @@ void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
     exps_end = t1_end;
 
     if(neg) {
-        saida << "\tmov ax,DS:[" << dec << exps_end << "]" << endl;
+        saida << "\tmov ax,DS:[" << exps_end << "]" << endl;
         saida << "\tneg ax" << endl;
-        saida << "\tmov DS:[" << dec << exps_end << "], ax" << endl;
+        saida << "\tmov DS:[" << exps_end << "], ax" << endl;
     }
 
     while (reg.token == TOKEN_MAIS || reg.token == TOKEN_MENOS ||
@@ -1206,8 +1207,8 @@ void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
         T(t2_tipo, t2_tamanho, t2_end);
         verificaOps(t1_tipo, t2_tipo, t1_tamanho, t2_tamanho, exps_op);
 
-        saida << "\tmov ax, DS:[" << dec << exps_end << "]" << endl;
-        saida << "\tmov bx, DS:[" << dec << t2_end << "]" << endl;
+        saida << "\tmov ax, DS:[" << exps_end << "]" << endl;
+        saida << "\tmov bx, DS:[" << t2_end << "]" << endl;
         if(exps_op == TOKEN_MAIS) saida << "\tadd ax, bx" << endl;
         else if(exps_op == TOKEN_MENOS) saida << "\tsub ax, bx" << endl;
         else {
@@ -1220,7 +1221,7 @@ void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
         }
         
         exps_end = novoTemp(exps_tipo);
-        saida << "\tmov DS:[" << dec << exps_end << "], ax" << endl;
+        saida << "\tmov DS:[" << exps_end << ", ax" << endl;
     }
 }
 
@@ -1278,8 +1279,8 @@ void Exp(int &exp_tipo, int &exp_tamanho, int &exp_end) {
             fimCmp = novoRot();
             saida << "\tmov ax, 1" << endl; //ax recebe true
             saida << "\tmov cx, 0" << endl; //contador de posicao em 0
-            saida << "\tmov bx, DS:[" << dec << exps1_end << "]" << endl; //carrega em bx o primeiro char da string 1
-            saida << "\tmov dx, DS:[" << dec << exps2_end << "]" << endl; //carrega em dx o primeiro char da string 2
+            saida << "\tmov bx, DS:[" << exps1_end << "]" << endl; //carrega em bx o primeiro char da string 1
+            saida << "\tmov dx, DS:[" << exps2_end << "]" << endl; //carrega em dx o primeiro char da string 2
             saida << comecoCmp << ":" << endl; //loop de comparacao
             saida << "\tcmp bx, dx" << endl; //compara dx e bx
             saida << "\tje " << iguais << ":" << endl;
@@ -1288,20 +1289,20 @@ void Exp(int &exp_tipo, int &exp_tamanho, int &exp_end) {
             saida << iguais << ":" << endl; // se forem iguais carrega os proximos chars
             saida << "\tcmp bx, '$'" << endl;
             saida << "\tje " << fimCmp << endl;
-            saida << "\tcmp dx '$'" << endl;
+            saida << "\tcmp dx, '$'" << endl;
             saida << "\tje " << fimCmp << endl;
             saida << "\tadd cx, 1" << endl; //incrementa a posicao
-            saida << "\tmov bx, " << hex << exps2_end << endl; //move o end pra bx
+            saida << "\tmov bx, "  << exps2_end  << endl; //move o end pra bx
             saida << "\tadd bx, cx" << endl; // soma posicao
             saida << "\tmov dx, DS:[bx]" << endl; // atualiza o char de dx
-            saida << "\tmov bx, " << hex << exps1_end << endl; //mov end pra bx
+            saida << "\tmov bx, "  << exps1_end  << endl; //mov end pra bx
             saida << "\tadd bx, cx" << endl; //soma a posicao
             saida << "\tmov bx, DS:[bx]" << endl; //atualiza o char de bx
             saida << "\tjmp " << comecoCmp << endl;
             saida << fimCmp << ":" << endl;
         } else {
-            saida << "\tmov ax, DS:[" << dec << exps1_end<< "]" << endl;
-            saida << "\tmov bx, DS:[" << dec << exps2_end<< "]" << endl;
+            saida << "\tmov ax, DS:[" <<  exps1_end<< "]" << endl;
+            saida << "\tmov bx, DS:[" <<  exps2_end<< "]" << endl;
             saida << "\tcmp ax, bx" << endl;
             string RotVerdadeiro = novoRot();
 
@@ -1322,7 +1323,7 @@ void Exp(int &exp_tipo, int &exp_tamanho, int &exp_end) {
         
         exp_tipo = TIPO_BOOLEAN;
         exp_end = novoTemp(exp_tipo);
-        saida << "\tmov DS:[" << dec << exp_end<< "], ax" << endl;  
+        saida << "\tmov DS:[" << exp_end<< "], ax" << endl;  
     }
 }
 
@@ -1561,7 +1562,7 @@ void CmdAtr() {
     if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
         Exp(exp1_tipo, exp1_tamanho, exp1_end);
-        contadorTemp = 0;
+        contadorTemp = POS_TEMPORARIOS;
 
         if(exp1_tipo != TIPO_INT){
             throw ERR_TIPO;
@@ -1569,18 +1570,35 @@ void CmdAtr() {
         id_tamanho = 0; //tamanho do id assume 0 pois agora ele sera um escalar
 
         // carrega posicao do id
-        saida << "\tadd si, DS:[" << dec << exp1_end << "]" << endl;
-        if (atr_tipo == TIPO_INT) saida << "\tadd si, DS:[" << dec << exp1_end << "]" << endl;
+        saida << "\tadd si, DS:[" << exp1_end << "]" << endl;
+        if (atr_tipo == TIPO_INT) saida << "\tadd si, DS:[" << exp1_end << "]" << endl;
 
         casaToken(TOKEN_FECHA_COLCH);
     }
     casaToken(TOKEN_ATRIB);
     Exp(exp2_tipo, exp2_tamanho, exp2_end);
-    contadorTemp = 0;
+    contadorTemp = POS_TEMPORARIOS;
     
 
     if(!(verificaCompatibAtr(atr_tipo, exp2_tipo, id_tamanho, exp2_tamanho))) throw ERR_TIPO;
-    else {
+    
+    if(id_tipo == TIPO_CHAR && id_tamanho > 0) { // vetor de char
+        if(exp2_tipo == TIPO_STRING || (exp2_tipo == TIPO_CHAR && exp2_tamanho > 0)){ // se exp2 for string ou vetor de char
+            string rotInicio = novoRot();
+            string rotFim = novoRot();
+            saida << "\tmov di, " << id_end << endl; //
+            saida << "\tmov si, " << exp2_end << endl;
+            saida << rotInicio << ":" << endl;
+            saida << "\tmov ax, DS:[si]" << endl;
+            saida << "\tmov DS:[di], ax" << endl;
+            saida << "\tcmp ax, 024h" << endl;
+            saida << "\tje " << rotFim << endl;
+            saida << "\tadd si, 1" << endl;
+            saida << "\tadd di, 1" << endl;
+            saida << "\tjmp " << rotInicio << endl;
+            saida << rotFim << ":" << endl;
+        }
+    } else {
         saida << "\tmov ax, DS:[" << exp2_end << "]" << endl;
         saida << "\tmov DS:[si], ax" << endl;
     }
@@ -1611,7 +1629,7 @@ void CmdRep() {
 
     casaToken(TOKEN_PONTO_VIRG);
     Exp(exp_tipo, exp_tamanho, exp_end);
-    contadorTemp = 0;
+    contadorTemp = POS_TEMPORARIOS;
 
     if(exp_tipo != TIPO_BOOLEAN || exp_tamanho > 0) throw ERR_TIPO;
 
@@ -1651,7 +1669,7 @@ void CmdIf() {
     casaToken(TOKEN_IF);
     casaToken(TOKEN_ABRE_PAREN);
     Exp(exp_tipo, exp_tamanho, exp_end);
-    contadorTemp = 0;
+    contadorTemp = POS_TEMPORARIOS;
 
     if(exp_tipo != TIPO_BOOLEAN || exp_tamanho > 0) throw ERR_TIPO;
 
@@ -1705,7 +1723,7 @@ void CmdRead() {
     if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
         Exp(exp_tipo, exp_tamanho, exp_end);
-        contadorTemp = 0;
+        contadorTemp = POS_TEMPORARIOS;
 
         if(exp_tipo != TIPO_INT || exp_tamanho > 0) throw ERR_TIPO;
         id_tamanho = 0; //tamanho do id assume 0 pois agora ele sera um escalar
@@ -1719,7 +1737,7 @@ void CmdRead() {
 }
 
 
-void printWrite(int tipo, int tamanho, int end, bool wln) {
+void printWrite(int tipo, int tamanho, int end) {
     string R0, R1, R2;
 
     if (tipo != TIPO_INT && tipo != TIPO_CHAR && tipo != TIPO_STRING) throw  ERR_TIPO;
@@ -1729,6 +1747,7 @@ void printWrite(int tipo, int tamanho, int end, bool wln) {
             R1 = novoRot();
             R2 = novoRot();
             int string_temp = novoTemp(TIPO_CHAR);
+            saida << "\tmov ax, DS:[" << end << "]" << endl;
             saida << "\tmov di, " << string_temp << endl; //end. string temp.
             saida << "\tmov cx, 0" << endl; //contador
             saida << "\tcmp ax,0" << endl; //verifica sinal
@@ -1767,12 +1786,12 @@ void printWrite(int tipo, int tamanho, int end, bool wln) {
             
         } else {
             //imprimir string normalmente
-            saida << "\tmov dx, " << dec << end << endl; 
+            saida << "\tmov dx, " << end << endl; 
         }
 
         saida << "\tmov ah, 09h" << endl; 
         saida << "\tint 21h" << endl; 
-        contadorTemp = 0;
+        contadorTemp = POS_TEMPORARIOS;
     }
 }
 
@@ -1792,20 +1811,20 @@ void CmdWrite() {
 
     casaToken(TOKEN_ABRE_PAREN);
     Exp(exp_tipo, exp_tamanho, exp_end);
-    contadorTemp = 0;
+    contadorTemp = POS_TEMPORARIOS;
     if(!verificaCompatibWrite(exp_tipo, exp_tamanho)){
         throw ERR_TIPO;
     }
-    printWrite(exp_tipo, exp_tamanho, exp_end, wln);
+    printWrite(exp_tipo, exp_tamanho, exp_end);
 
     while (reg.token == TOKEN_VIRG) {
         casaToken(TOKEN_VIRG);
         Exp(exp1_tipo, exp1_tamanho, exp1_end);
-        contadorTemp = 0;
+        contadorTemp = POS_TEMPORARIOS;
         if(!verificaCompatibWrite(exp1_tipo, exp1_tamanho)){
             throw ERR_TIPO;
         }   
-        printWrite(exp_tipo, exp_tamanho, exp_end, wln);
+        printWrite(exp1_tipo, exp1_tamanho, exp1_end);
     }
     casaToken(TOKEN_FECHA_PAREN);
 
@@ -1869,8 +1888,15 @@ void Cmd() {
 // Prog -> { Dec } main BlocoCmd EOF
 void Prog() {
     //Escrever inicio do segmento de dados
+
+    // saida << "sseg SEGMENT STACK\t;início seg. pilha" << endl;
+    // saida << "byte " << dec << contadorDados <<" DUP(?)\t;dimensiona pilha" << endl;
+    // saida << "sseg ENDS\t;fim seg. pilha" << endl;
+
+    contadorDados += 0x4000;
+
     saida << "dseg SEGMENT PUBLIC\n";
-    saida << "\tbyte " << hex << contadorDados << "h DUP (?)\n";
+    saida << "\tbyte " << dec << contadorDados << " DUP (?)\n";
     
     //Ciclo de declaracoes
     while (reg.token == TOKEN_INT || reg.token == TOKEN_CHAR ||
@@ -1891,7 +1917,7 @@ void Prog() {
     casaToken(TOKEN_MAIN);
     BlocoCmd();
 
-    saida << "\t;fimProg" << endl;
+    saida << ";fimProg" << endl;
     saida << "\tmov ah, 4Ch" << endl;
     saida << "\tint 21h" << endl;
     saida << "cseg ENDS" << endl;
@@ -1908,11 +1934,11 @@ Executa os analisadores a partir do primeiro token recebido
 */
 int main() {
     //inicializando memoria
-    contadorDados = 0x4000;
+    contadorDados = 0;
 
 	//inicializando contador de rotulos e de temporarios
 	contadorRot = 0;
-    contadorTemp = 0;
+    contadorTemp = POS_TEMPORARIOS;
 
     //inicializando arquivo de saida
     saida.open("saida.asm");
@@ -1954,7 +1980,7 @@ int main() {
     t.inserir("[", TOKEN_ABRE_COLCH);
     t.inserir("]", TOKEN_FECHA_COLCH);
     t.inserir("main", TOKEN_MAIN);
-    t.inserir("EOF", TOKEN_EOF);  // CONSERTAR !!!!!
+    t.inserir("EOF", TOKEN_EOF);
     t.inserir("boolean", TOKEN_BOOL);
 
     try {
@@ -1973,7 +1999,6 @@ int main() {
             case ERR_CHAR:
                 cout << linha << endl << "caractere invalido.";
                 break;
-        // t.mostrar();
             case ERR_TIPO:
                 cout << linha << endl << "tipos incompativeis.";
                 break;

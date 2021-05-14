@@ -1,4 +1,6 @@
-int a;
+char nome[6];
+int a := 100, b;
 main {
-    writeln("tulhyowwysdanasndfllasd");
+    nome := "pedro";
+    writeln(a);
 }
