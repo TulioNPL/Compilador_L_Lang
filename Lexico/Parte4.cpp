@@ -1588,13 +1588,15 @@ void CmdAtr() {
             string rotFim = novoRot();
             saida << "\tmov di, " << id_end << endl; //
             saida << "\tmov si, " << exp2_end << endl;
+            saida << "\tmov cx, " << exp2_tamanho - 1 << endl
             saida << rotInicio << ":" << endl;
+            saida << "\tcmp cx, 0" << endl;
             saida << "\tmov ax, DS:[si]" << endl;
             saida << "\tmov DS:[di], ax" << endl;
-            saida << "\tcmp ax, 024h" << endl;
             saida << "\tje " << rotFim << endl;
             saida << "\tadd si, 1" << endl;
             saida << "\tadd di, 1" << endl;
+            saida << "\tadd cx, -1" << endl;
             saida << "\tjmp " << rotInicio << endl;
             saida << rotFim << ":" << endl;
         }
