@@ -1,7 +1,7 @@
 /* Exemplo de Programa na linguagem L */
 
 int n;
-char nome[40];
+char nome[20];
 final MAXITER=10;
 
 main {

@@ -1,9 +1,11 @@
 /* Exemplo de Programa na linguagem L */
 
 int n[3], max:=0, i;
+char a;
 
 main
 {
+  a := 'a';
   for (i:=0; i<3; i:=i+1) {
     write("Digite um numero: ");
     readln(n[i]);

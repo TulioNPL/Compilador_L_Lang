@@ -662,8 +662,6 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
         case TOKEN_ASTER:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
-            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
-                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
             } else {
                 throw ERR_TIPO;
             }
@@ -672,8 +670,6 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
         case TOKEN_BARRA:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
-            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
-                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
             } else {
                 throw ERR_TIPO;
             }
@@ -694,8 +690,6 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
         case TOKEN_MAIS:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
-            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
-                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
             } else {
                 throw ERR_TIPO;
             }
@@ -704,9 +698,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
         case TOKEN_MENOS:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
-            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
-                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
-            } else {
+            }else {
                 throw ERR_TIPO;
             }
             break;
@@ -798,14 +790,12 @@ bool verificaCompatibDec(int id_tipo, int const_tipo){
         return false;
 }
 
-bool verificaCompatibRead(int id_tipo, int id_tamanho, int id_classe) {
-    if(id_classe == CLASSE_VAR) {
-        if (id_tipo == TIPO_INT){
-            if(id_tamanho == 0) return true;
-        } else if (id_tipo == TIPO_CHAR || id_tipo == TIPO_STRING) {
-            return true;
-        } 
-    } 
+bool verificaCompatibRead(int id_tipo, int id_tamanho) {
+    if (id_tipo == TIPO_INT){
+        if(id_tamanho == 0) return true;
+    } else if (id_tipo == TIPO_CHAR) {
+        return true;
+    }  
     return false;
 }
 
@@ -822,12 +812,11 @@ bool verificaCompatibWrite(int exp_tipo, int exp_tamanho){
 bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tamanho){
     if(id_tipo == TIPO_INT){
         //confere se os inteiros manipulados sao escalares
-        // aqui demtro ten qui ver si eh vetor o nao
         if(exp_tipo == TIPO_INT && id_tamanho == 0 && exp_tamanho == 0) return true;
     } else if (id_tipo == TIPO_CHAR){
         if(id_tamanho > 0) { // se ID for vetor
-            if(exp_tipo == TIPO_STRING && exp_tamanho <= (id_tamanho-1)) return true;
-            else if(exp_tipo == TIPO_CHAR && exp_tamanho <= id_tamanho) return true; 
+            if(exp_tipo == TIPO_STRING && exp_tamanho - 1 <= id_tamanho) return true;
+            else if(exp_tipo == TIPO_CHAR && id_tamanho <= exp_tamanho) return true; 
         } else { // se ID for escalar
             if(exp_tipo == TIPO_CHAR && exp_tamanho == 0) return true;
         }
@@ -995,16 +984,22 @@ void T(int &t_tipo, int &t_tamanho) {
 void ExpS(int &exps_tipo, int &exps_tamanho) {
     int exps_op;
     int t1_tipo, t1_tamanho, t2_tipo, t2_tamanho;
+    bool sinal = false;
 
     if (reg.token == TOKEN_MAIS) {
         casaToken(TOKEN_MAIS);
+        sinal = true;
     } else if (reg.token == TOKEN_MENOS) {
         casaToken(TOKEN_MENOS);
+        sinal = true;
     }
 
     T(t1_tipo, t1_tamanho);
     exps_tipo = t1_tipo;
     exps_tamanho = t1_tamanho;
+    if(sinal){
+        if(exps_tipo != TIPO_INT) throw ERR_TIPO;
+    }
 
     while (reg.token == TOKEN_MAIS || reg.token == TOKEN_MENOS ||
            reg.token == TOKEN_OR) {
@@ -1115,13 +1110,14 @@ void Dec() {
         casaToken(TOKEN_IGUAL);
         if (reg.token == TOKEN_MENOS) {
             casaToken(TOKEN_MENOS);
+            if(reg.tipo != TIPO_INT) throw ERR_TIPO; //teste
         }
         
 		// retorna os dados da constante
         const_val = reg.lexema;
         const_tipo = reg.tipo;
         const_tam = reg.tamanho;
-        id_tipo = const_tipo;
+        id_tipo = const_tipo == 0?TIPO_BOOLEAN:const_tipo;
         casaToken(TOKEN_CONST);
         casaToken(TOKEN_PONTO_VIRG);
         t.atualizar(id_lex, id_tipo, id_tamanho, id_classe);
@@ -1160,6 +1156,7 @@ void Dec() {
             casaToken(TOKEN_ATRIB);
             if (reg.token == TOKEN_MENOS) {
                 casaToken(TOKEN_MENOS);
+                if(reg.tipo != TIPO_INT) throw ERR_TIPO; //teste
             }
             
 			// retorna os dados da constante
@@ -1212,6 +1209,7 @@ void Dec() {
                 casaToken(TOKEN_ATRIB);
                 if (reg.token == TOKEN_MENOS) {
                     casaToken(TOKEN_MENOS);
+                    if(reg.tipo != TIPO_INT) throw ERR_TIPO; //teste
                 }
                 
 				// retorna os dados da constante
@@ -1421,6 +1419,7 @@ void CmdRead() {
     id_classe = t.getClasse(reg.lexema, reg.posicao);
 
     if(id_tipo == TIPO_VAZIO) throw ERR_NOT_EXISTS;
+    else if(id_classe == CLASSE_CONST) throw ERR_CLASSE;
 
     casaToken(TOKEN_ID);
 
@@ -1433,7 +1432,7 @@ void CmdRead() {
         casaToken(TOKEN_FECHA_COLCH);
     }
     
-    if(!verificaCompatibRead(id_tipo,id_tamanho, id_classe)){
+    if(!verificaCompatibRead(id_tipo,id_tamanho)){
         throw ERR_TIPO;
     }
     casaToken(TOKEN_FECHA_PAREN);
@@ -1599,7 +1598,7 @@ int main() {
                 cout << linha << endl << "identificador nao declarado [" << reg.lexema << "].";
                 break;
             case ERR_CLASSE:
-                cout << linha << endl << "classe de identificador incompatível [" << reg.lexema << "].";
+                cout << linha << endl << "classe de identificador incompativel [" << reg.lexema << "].";
                 break;
         }
         return 0;
