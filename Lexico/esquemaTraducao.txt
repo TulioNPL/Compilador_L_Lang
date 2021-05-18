@@ -283,46 +283,51 @@ CmdAtr -> ID (1) ["[" Exp (2) "]"] := Exp1 (3)
 }
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
-CmdWrite -> (write|writeln(2))"(" Exp (1) {, Exp (1) } ")" (2)
+CmdWrite -> (write|writeln(2))"(" Exp (1) {, Exp (1) } ")"
 (1) { 
     se exp.tipo != int || char || string entao ERRO  "Tipos incompativeis"
     senao
-            mov di, string.end ;end. string temp.
-            mov cx, 0 ;contador
-            cmp ax,0 ;verifica sinal
-            jge R0 ;salta se número positivo
-            mov bl, 2Dh ;senão, escreve sinal –
-            mov ds:[di], bl
-            add di, 1 ;incrementa índice
-            neg ax ;toma módulo do número
-        R0 = novoRot()
-        R0:
-            mov bx, 10 ;divisor
-        R1 = novoRot()
-        R1:
-            add cx, 1 ;incrementa contador
-            mov dx, 0 ;estende 32bits p/ div.
-            idiv bx ;divide DXAX por BX
-            push dx ;empilha valor do resto
-            cmp ax, 0 ;verifica se quoc. é 0
-            jne R1 ;se não é 0, continua
-            ;agora, desemp. os valores e escreve o string
-        R2 = novoRot()
-        R2:
-            pop dx ;desempilha valor
-            add dx, 30h ;transforma em caractere
-            mov ds:[di],dl ;escreve caractere
-            add di, 1 ;incrementa base
-            add cx, -1 ;decrementa contador
-            cmp cx, 0 ;verifica pilha vazia
-            jne R2 ;se não pilha vazia, loop
-            ;grava fim de string
-            mov dl, 024h ;fim de string
-            mov ds:[di], dl ;grava '$'
-            ;exibe string
-            mov dx, string.end
-            mov ah, 09h
-            int 21h
+        se tipo == int entao
+                mov di, string.end ;end. string temp.
+                mov cx, 0 ;contador
+                cmp ax,0 ;verifica sinal
+                jge R0 ;salta se número positivo
+                mov bl, 2Dh ;senão, escreve sinal –
+                mov ds:[di], bl
+                add di, 1 ;incrementa índice
+                neg ax ;toma módulo do número
+            R0 = novoRot()
+            R0:
+                mov bx, 10 ;divisor
+            R1 = novoRot()
+            R1:
+                add cx, 1 ;incrementa contador
+                mov dx, 0 ;estende 32bits p/ div.
+                idiv bx ;divide DXAX por BX
+                push dx ;empilha valor do resto
+                cmp ax, 0 ;verifica se quoc. é 0
+                jne R1 ;se não é 0, continua
+                ;agora, desemp. os valores e escreve o string
+            R2 = novoRot()
+            R2:
+                pop dx ;desempilha valor
+                add dx, 30h ;transforma em caractere
+                mov ds:[di],dl ;escreve caractere
+                add di, 1 ;incrementa base
+                add cx, -1 ;decrementa contador
+                cmp cx, 0 ;verifica pilha vazia
+                jne R2 ;se não pilha vazia, loop
+                ;grava fim de string
+                mov dl, 024h ;fim de string
+                mov ds:[di], dl ;grava '$'
+                mov dx, string.end
+
+        senao 
+            mov dx, string.end  
+
+        ;exibe string
+        mov ah, 09h
+        int 21h
 
     se linha entao //imprime quebra de linha
         mov ah, 02h
@@ -331,19 +336,112 @@ CmdWrite -> (write|writeln(2))"(" Exp (1) {, Exp (1) } ")" (2)
         mov DL, 0Ah
         int 21h
 }
+
 (2) { line = true }
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
 
-CmdRead -> readln "(" ID (2) ["[" Exp (3) "]"] (1) ")"
-(1) -> { se id.tipo != int || char || string e for vetor entao ERRO }
-(2) -> { se id.tipo == VAZIO entao ERRO}
-(3) -> { se exp.tipo != int && exp.tamanho > 0 entao ERRO }
+CmdRead -> readln "(" ID (1) ["[" Exp (2) "]"] (3) ")"
+(1) -> { 
+    se id.tipo == VAZIO entao ERRO
+}
+(2) -> { 
+    se exp.tipo != int && exp.tamanho > 0 entao ERRO 
+    senao id.tamanho = 0 // agora é um escalar
+}
+(3) -> { 
+    se id.tipo == int && id.tamanho > 0 entao ERRO "Tipos incompativeis"
+
+    // define o tamanho do buffer e cria o endereço
+    se id.tamanho = 0 entao buffer_tam = 1;
+    senao buffer_tam = id_tamanho;
+    buffer_tam = (buffer_tam < 255) ? buffer_tam : 255;
+    buffer_end = novoBuffer(id_tipo, buffer_tam);
+    
+    mov dx, buffer_end
+    mov al, buffer_tam
+    mov ds:[buffer_end], al
+    mov ah, 0Ah
+    int 21h
+
+    se id.tipo == INT entao
+
+            mov di, buffer.end+2 ;posição do string
+            mov ax, 0 ;acumulador
+            mov cx, 10 ;base decimal
+            mov dx, 1 ;valor sinal +
+            mov bh, 0
+            mov bl, ds:[di] ;caractere
+            cmp bx, 2Dh ;verifica sinal
+            jne R0 ;se não negativo
+            mov dx, -1 ;valor sinal -
+            add di, 1 ;incrementa base
+            mov bl, ds:[di] ;próximo caractere
+        R0:
+            push dx ;empilha sinal
+            mov dx, 0 ;reg. multiplicação
+        R1:
+            cmp bx, 0dh ;verifica fim string
+            je R2 ;salta se fim string
+            imul cx ;mult. 10
+            add bx, -48 ;converte caractere
+            add ax, bx ;soma valor caractere
+            add di, 1 ;incrementa base
+            mov bh, 0
+            mov bl, ds:[di] ;próximo caractere
+            jmp R1 ;loop
+        R2:
+            pop cx ;desempilha sinal
+            imul cx ;mult. sinal
+
+    senao
+        //pega string
+        inicio = novoRot()
+        fim = novoRot()
+        
+            mov si, buffer.end 
+            mov di, id.end
+            add si,1
+            mov ax, DS:[si]
+            mov CX, 0
+            add si, 1
+
+        inicio:
+            cmp CX, AX
+            je fim
+            mov dx, ds:[si]
+            mov ds:[di], dx
+            add si, 1
+            add di, 1
+            add cx, 1
+            jmp inicio
+        fim:
+            mov AX, '$'
+            mov DS:[di], AX
+    
+}
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
-CmdIf -> if"(" Exp (1) ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
-(1) -> { se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO }
+CmdIf -> if(1)"(" Exp (2) ")" then (Cmd | BlocoCmd) (3) [else (Cmd | BlocoCmd)] (4)
+(1) -> {
+    RotFalso:=NovoRot();
+    RotFim:=NovoRot();
+}
+(2) -> { 
+    se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO 
+    mov dx, ds:[exp_end]
+    cmp dx, 0
+    je rotFalso
+}
 
+(3) -> {
+    jmp RotFim:
+    RotFalso:  
+}
+
+(4) -> {
+    RotFim:
+}
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
 CmdRep -> for"(" [CmdFor {, CmdFor}]; Exp (1); [CmdFor {, CmdFor}] ")" (Cmd | BlocoCmd)

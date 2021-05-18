@@ -124,12 +124,25 @@ string novoRot(){
     return "R" + std::to_string(contadorRot++);
 }
 
+
+// metodo para criar temporario para expressoes
 int novoTemp(int tipo){
     int temp = contadorTemp;
     if(tipo == TIPO_CHAR){
         contadorTemp += 1;
     } else {
         contadorTemp += 2;
+    }
+    return temp;
+}
+
+// metodo para criar temporarios para o buffer de entrada
+int novoBuffer(int tipo, int tamanho){
+    int temp = contadorTemp;
+    if(tipo == TIPO_CHAR){
+        contadorTemp += 1*tamanho;
+    } else {
+        contadorTemp += 2*tamanho;
     }
     return temp;
 }
@@ -720,8 +733,6 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
         case TOKEN_ASTER:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
-            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
-                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
             } else {
                 throw ERR_TIPO;
             }
@@ -730,8 +741,6 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
         case TOKEN_BARRA:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
-            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
-                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
             } else {
                 throw ERR_TIPO;
             }
@@ -752,8 +761,6 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
         case TOKEN_MAIS:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
-            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
-                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
             } else {
                 throw ERR_TIPO;
             }
@@ -762,9 +769,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
         case TOKEN_MENOS:
             if(f1_tipo == TIPO_INT && f1_tamanho == 0) { // se tipo 1 for int escalar
                 if(f2_tipo != TIPO_INT || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for int ou nao for escalar ERRO
-            } else if (f1_tipo == TIPO_CHAR && f1_tamanho == 0) { // se tipo 1 for char escalar
-                if(f2_tipo != TIPO_CHAR || f2_tamanho != 0) throw ERR_TIPO; // se tipo 2 nao for char ou nao for escalar ERRO
-            } else {
+            }else {
                 throw ERR_TIPO;
             }
             break;
@@ -860,14 +865,12 @@ bool verificaCompatibDec(int id_tipo, int const_tipo){
 
 
 //Verifica a compatibilidade de tipos no comando ReadLn
-bool verificaCompatibRead(int id_tipo, int id_tamanho, int id_classe) {
-    if(id_classe == CLASSE_VAR) {
-        if (id_tipo == TIPO_INT){
-            if(id_tamanho == 0) return true;
-        } else if (id_tipo == TIPO_CHAR || id_tipo == TIPO_STRING) {
-            return true;
-        } 
-    } 
+bool verificaCompatibRead(int id_tipo, int id_tamanho) {
+    if (id_tipo == TIPO_INT){
+        if(id_tamanho == 0) return true;
+    } else if (id_tipo == TIPO_CHAR) {
+        return true;
+    }  
     return false;
 }
 
@@ -893,7 +896,7 @@ bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tama
     } else if (id_tipo == TIPO_CHAR){
         if(id_tamanho > 0) { // se ID for vetor
             if(exp_tipo == TIPO_STRING && exp_tamanho -1 <= id_tamanho)return true;
-            else if(exp_tipo == TIPO_CHAR && exp_tamanho <= id_tamanho) return true; 
+            else if(exp_tipo == TIPO_CHAR && id_tamanho <= exp_tamanho) return true; 
         } else { // se ID for escalar
             if(exp_tipo == TIPO_CHAR && exp_tamanho == 0) return true;
         }
@@ -983,10 +986,8 @@ void printDec(int tipo, int classe, string val, int tamanho){
                 saida << "\tsword " << (!val.compare("VAZIO")?"?":(!val.compare("TRUE")?"1":"0")) << " \t;var. Bool em " << contadorDados << endl;
                 contadorDados += 2;
             }
-
         }
-    }
-        
+    }        
 }
 
 /*
@@ -1172,10 +1173,13 @@ void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
     int exps_op;
     int t1_tipo, t1_tamanho, t1_end, t2_tipo, t2_tamanho, t2_end;
     bool neg = false;
+    bool sinal = false;
 
     if (reg.token == TOKEN_MAIS) {
+        sinal = true;
         casaToken(TOKEN_MAIS);
     } else if (reg.token == TOKEN_MENOS) {
+        sinal = true;
         neg = true;
         casaToken(TOKEN_MENOS);
     }
@@ -1184,6 +1188,10 @@ void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
     exps_tipo = t1_tipo;
     exps_tamanho = t1_tamanho;
     exps_end = t1_end;
+
+    if(sinal){
+        if(exps_tipo != TIPO_INT) throw ERR_TIPO;
+    }
 
     if(neg) {
         saida << "\tmov ax,DS:[" << exps_end << "]" << endl;
@@ -1368,13 +1376,14 @@ void Dec() {
         casaToken(TOKEN_IGUAL);
         if (reg.token == TOKEN_MENOS) {
             casaToken(TOKEN_MENOS);
+            if(reg.tipo != TIPO_INT) throw ERR_TIPO;
         }
         
 		// retorna os dados da constante
         const_val = reg.lexema;
         const_tipo = reg.tipo;
         const_tam = reg.tamanho;
-        id_tipo = const_tipo;
+        id_tipo = const_tipo == 0?TIPO_BOOLEAN:const_tipo;
         casaToken(TOKEN_CONST);
         casaToken(TOKEN_PONTO_VIRG);
 
@@ -1417,6 +1426,7 @@ void Dec() {
             casaToken(TOKEN_ATRIB);
             if (reg.token == TOKEN_MENOS) {
                 casaToken(TOKEN_MENOS);
+                if(reg.tipo != TIPO_INT) throw ERR_TIPO;
             }
             
 			// retorna os dados da constante
@@ -1473,6 +1483,7 @@ void Dec() {
                 casaToken(TOKEN_ATRIB);
                 if (reg.token == TOKEN_MENOS) {
                     casaToken(TOKEN_MENOS);
+                    if(reg.tipo != TIPO_INT) throw ERR_TIPO;
                 }
                 
 				// retorna os dados da constante
@@ -1588,7 +1599,7 @@ void CmdAtr() {
             string rotFim = novoRot();
             saida << "\tmov di, " << id_end << endl; //
             saida << "\tmov si, " << exp2_end << endl;
-            saida << "\tmov cx, " << exp2_tamanho - 1 << endl
+            saida << "\tmov cx, " << exp2_tamanho - 1 << endl;
             saida << rotInicio << ":" << endl;
             saida << "\tcmp cx, 0" << endl;
             saida << "\tmov ax, DS:[si]" << endl;
@@ -1665,13 +1676,20 @@ void CmdRep() {
 // CmdIf -> if"(" Exp (1) ")" then (Cmd | BlocoCmd) [else (Cmd | BlocoCmd)]
 // (1) -> { se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO }
 void CmdIf() {
-
+    saida << ";cmdIf()" << endl;
     int exp_tipo, exp_tamanho, exp_end;
+    string RotFalso, RotFim;
+    RotFalso = novoRot();
+    RotFim = novoRot();
 
     casaToken(TOKEN_IF);
     casaToken(TOKEN_ABRE_PAREN);
     Exp(exp_tipo, exp_tamanho, exp_end);
     contadorTemp = POS_TEMPORARIOS;
+
+    saida << "\tmov DX, ds:["<<exp_end<<"]" << endl;
+    saida << "\tcmp DX, 0" << endl;
+    saida << "\tje " << RotFalso << endl;
 
     if(exp_tipo != TIPO_BOOLEAN || exp_tamanho > 0) throw ERR_TIPO;
 
@@ -1687,6 +1705,9 @@ void CmdIf() {
         BlocoCmd();
     }
 
+    saida << "jmp " << RotFim << endl;
+    saida << RotFalso << ":" << endl;
+    
     if (reg.token == TOKEN_ELSE) {
         casaToken(TOKEN_ELSE);
         if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
@@ -1698,6 +1719,7 @@ void CmdIf() {
             BlocoCmd();
         }
     }
+    saida << RotFim << ":" << endl;
 }
 
 
@@ -1710,17 +1732,20 @@ void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
 // (2) -> { se id.tipo == VAZIO entao ERRO}
 // (3) -> { se exp.tipo != int && exp.tamanho > 0 entao ERRO }
 void CmdRead() {
-
-    int exp_tipo, exp_tamanho, id_tipo, id_tamanho, id_classe, exp_end;
+    saida <<";cmdRead()" << endl;
+    int exp_tipo, exp_tamanho, id_tipo, id_tamanho, id_end, id_classe, exp_end;
     casaToken(TOKEN_READLN);
     casaToken(TOKEN_ABRE_PAREN);
     id_tipo = t.getTipo(reg.lexema, reg.posicao);
     id_tamanho = t.getTamanho(reg.lexema, reg.posicao);
     id_classe = t.getClasse(reg.lexema, reg.posicao);
+    id_end = t.getEnd(reg.lexema, reg.posicao);
 
     if(id_tipo == TIPO_VAZIO) throw ERR_NOT_EXISTS;
+    else if(id_classe == CLASSE_CONST) throw ERR_CLASSE;
 
     casaToken(TOKEN_ID);
+    saida << "\tmov si, " << id_end << endl;
 
     if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
@@ -1729,12 +1754,93 @@ void CmdRead() {
 
         if(exp_tipo != TIPO_INT || exp_tamanho > 0) throw ERR_TIPO;
         id_tamanho = 0; //tamanho do id assume 0 pois agora ele sera um escalar
+
+        
+        saida << "\tadd si, DS:[" << exp_end << "]" << endl;
+        if (id_tipo == TIPO_INT) saida << "\tadd si, DS:[" << exp_end << "]" << endl;
         casaToken(TOKEN_FECHA_COLCH);
     }
-    
-    if(!verificaCompatibRead(id_tipo,id_tamanho, id_classe)){
+
+
+    if(!verificaCompatibRead(id_tipo,id_tamanho)){
         throw ERR_TIPO;
     }
+    
+    int buffer_tam = 0; // inicia o tamanho do buffer
+    if(id_tipo == TIPO_INT && id_tamanho == 0) buffer_tam = 255; // se o tamanho do id for 1, é escalar, portanto o buffer tem tamanho 255
+    else if(id_tipo == TIPO_CHAR && id_tamanho == 0) buffer_tam = 1+3;
+    else buffer_tam = id_tamanho+3; // se nao o tamanho do buffer é o tamanho do id
+    // buffer_tam = (buffer_tam < 255) ? buffer_tam : 255; // seleciona entre buffer_tam e 2 o que for menor para o tamanho do buffer
+    
+    // define o tamanho do buffer e cria o endereço
+    int buffer_end = novoBuffer(id_tipo, buffer_tam);
+    
+    saida << "\tmov dx, " << buffer_end << endl;
+    saida << "\tmov al, " << buffer_tam-3 << endl;
+    saida << "\tmov ds:[" << buffer_end << "], al" << endl;
+    saida << "\tmov ah, 0Ah" << endl;
+    saida << "\tint 21h" << endl;
+
+    if(id_tipo == TIPO_INT){
+        string R0, R1, R2;
+        R0 = novoRot();
+        R1 = novoRot();
+        R2 = novoRot();
+
+        saida << "\tmov di, " << (buffer_end+2) << endl; //posição do string
+        saida << "\tmov ax, 0" << endl; //acumulador
+        saida << "\tmov cx, 10" << endl; //base decimal
+        saida << "\tmov dx, 1" << endl; //valor sinal +
+        saida << "\tmov bh, 0" << endl;
+        saida << "\tmov bl, ds:[di]" << endl; //caractere
+        saida << "\tcmp bx, 2Dh" << endl; //verifica sinal
+        saida << "\tjne " << R0 << endl; //se não negativo
+        saida << "\tmov dx, -1" << endl; //valor sinal -
+        saida << "\tadd di, 1" << endl; //incrementa base
+        saida << "\tmov bl, ds:[di]" << endl; //próximo caractere
+        saida << R0 << ":" << endl;
+        saida << "\tpush dx" << endl; 
+        saida << "\tmov dx, 0" << endl; 
+        saida << R1 << ":" << endl;
+        saida << "\tcmp bx, 0dh" << endl; 
+        saida << "\tje " << R2 << " ;salta se fim string" << endl; 
+        saida << "\timul cx ;mult. 10" << endl; 
+        saida << "\tadd bx, -48  ;converte caractere" << endl;
+        saida << "\tadd ax, bx ;soma valor caractere" << endl;
+        saida << "\tadd di, 1 ;incrementa base" << endl;
+        saida << "\tmov bh, 0" << endl;
+        saida << "\tmov bl, ds:[di] ;próximo caractere" << endl;
+        saida << "\tjmp " << R1 << " ;loop" << endl;
+        saida << R2 << ":" << endl;
+        saida << "\tpop cx ;desempilha sinal" << endl;
+        saida << "\timul cx ;mult. sinal" << endl;
+        saida << "\tmov ds:[si], ax ;move pro id o valor acumulado" << endl;
+    } else {
+        //pega string
+        string inicio, fim;
+        inicio = novoRot();
+        fim = novoRot();
+
+        saida << "\tmov di, " << (buffer_end+2) << endl; //posição do string
+        saida << inicio << ":" << endl;
+        saida << "\tmov bl, ds:[di]" << endl; //caractere
+        saida << "\tcmp bx, 0dh" << endl; 
+        saida << "\tje " << fim << " ;salta se fim string" << endl;
+        saida << "\tmov ds:[si], bl" << endl;
+        saida << "\tadd di, 1 ;incrementa base" << endl;
+        saida << "\tadd si, 1 ;incrementa base" << endl;
+        saida << "\tjmp " << inicio << endl;
+        saida << fim << ":" << endl;
+        saida << "\tmov ax, 024h" << endl;
+        saida << "\tmov DS:[si], ax" << endl;
+    }
+    
+    saida << "\tmov ah, 02h" << endl;
+    saida << "\tmov dl, 0Dh" << endl;
+    saida << "\tint 21h" << endl;
+    saida << "\tmov DL, 0Ah" << endl;
+    saida << "\tint 21h" << endl;
+
     casaToken(TOKEN_FECHA_PAREN);
 }
 
@@ -2014,7 +2120,7 @@ int main() {
                 cout << linha << endl << "identificador nao declarado [" << reg.lexema << "].";
                 break;
             case ERR_CLASSE:
-                cout << linha << endl << "classe de identificador incompatível [" << reg.lexema << "].";
+                cout << linha << endl << "classe de identificador incompativel [" << reg.lexema << "].";
                 break;
         }
         return 0;
