@@ -1,14 +1,12 @@
 int a, b;
 char nome[10];
 main {
-    writeln("Digite Seu Nome");
-    readln(nome);
-    writeln("Digite Hum Numero");
-    readln(a);
-    writeln("Digite Houtro Numero");
-    readln(b);
+    b:=15;
 
-    if(a > b) then {
-        writeln(nome ," o primeiro numero eh maior");
-    } else writeln(nome ," o primeiro numero eh menor");
+    writeln("Escreva seu nome, Tulio.");
+    readln(nome);
+
+    for(a:=3, writeln("por que deus o que eu fiz pra merecer"); a<b; a:=a+2){
+        writeln(nome, " ", a);
+    }
 }

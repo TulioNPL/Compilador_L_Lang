@@ -1229,7 +1229,7 @@ void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
         }
         
         exps_end = novoTemp(exps_tipo);
-        saida << "\tmov DS:[" << exps_end << ", ax" << endl;
+        saida << "\tmov DS:[" << exps_end << "], ax" << endl;
     }
 }
 
@@ -1621,8 +1621,10 @@ void CmdAtr() {
 //CmdRep -> for"(" [CmdFor {, CmdFor}]; Exp (1); [CmdFor {, CmdFor}] ")" (Cmd | BlocoCmd)
 //(1) -> { se exp.tipo != BOOLEAN entao ERRO}
 void CmdRep() {
+    saida << ";cmdRep()" << endl;
 
     int exp_tipo, exp_tamanho, exp_end;
+    string rotInicio, rotFim, rotComandes, rotComandos;
 
     casaToken(TOKEN_FOR);
     casaToken(TOKEN_ABRE_PAREN);
@@ -1641,10 +1643,25 @@ void CmdRep() {
     }
 
     casaToken(TOKEN_PONTO_VIRG);
+    rotInicio = novoRot();
+    saida << rotInicio << ":" << endl;
     Exp(exp_tipo, exp_tamanho, exp_end);
+    
     contadorTemp = POS_TEMPORARIOS;
 
     if(exp_tipo != TIPO_BOOLEAN || exp_tamanho > 0) throw ERR_TIPO;
+    
+    
+    rotFim = novoRot();
+    rotComandes = novoRot();
+    rotComandos = novoRot();
+
+    
+    saida << "\tmov dx, ds:[" << exp_end << "]" << endl; //carregar conteúdo de Exp.end em dx
+    saida << "\tcmp dx, 0" << endl;
+    saida << "\tje " << rotFim << endl;
+    saida << "\tjmp " << rotComandos << endl;
+    saida << rotComandes << ":" << endl;
 
     casaToken(TOKEN_PONTO_VIRG);
     if (reg.token == TOKEN_ID || reg.token == TOKEN_READLN ||
@@ -1661,6 +1678,9 @@ void CmdRep() {
         }
     }
 
+    saida << "\tjmp " << rotInicio << endl;
+    saida << rotComandos << ":" << endl;
+    
     casaToken(TOKEN_FECHA_PAREN);
     if (reg.token == TOKEN_ID || reg.token == TOKEN_FOR ||
         reg.token == TOKEN_IF || reg.token == TOKEN_PONTO_VIRG ||
@@ -1670,6 +1690,9 @@ void CmdRep() {
     } else {
         BlocoCmd();
     }
+
+    saida << "\tjmp " << rotComandes << endl;
+    saida << rotFim << ":" << endl;
 }
 
 

@@ -444,8 +444,33 @@ CmdIf -> if(1)"(" Exp (2) ")" then (Cmd | BlocoCmd) (3) [else (Cmd | BlocoCmd)] 
 }
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
-CmdRep -> for"(" [CmdFor {, CmdFor}]; Exp (1); [CmdFor {, CmdFor}] ")" (Cmd | BlocoCmd)
-(1) -> { se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO }
+CmdRep -> for"(" [CmdFor {, CmdFor}]; Exp (1); (2)[CmdFor {, CmdFor}] ")" (3)(Cmd | BlocoCmd)
+rotExp:
+EXP()
+///////
+
+(1) -> { 
+    se exp.tipo != BOOLEAN || exp.tamanho > 0 entao ERRO
+    rotInicio = novoRot();
+    rotFim = novoRot();
+    rotInicio:
+        mov dx, ds:[exp_end] //carregar conteúdo de Exp.end em dx
+        cmp dx, 0
+        je rotFim
+        jmp RotComandos
+}
+(2) -> {
+    RotComandes:
+        // executa os comandos do corpo do for
+        jmp rotInicio
+}
+
+(3) -> {
+    RotComandos:
+        //executa comandos dentro do for
+        jmp RotComandes
+    rotFim:
+}
 
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
