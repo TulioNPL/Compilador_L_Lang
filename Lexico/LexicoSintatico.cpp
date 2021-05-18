@@ -884,6 +884,7 @@ void F(int &f_tipo, int &f_tamanho) {
             throw ERR_TIPO;
         }
         f_tamanho = f1_tamanho;
+        f_tipo = f1_tipo;
     } else if (reg.token == TOKEN_ABRE_PAREN) {
         casaToken(TOKEN_ABRE_PAREN);
         Exp(exp_tipo, exp_tamanho);
@@ -896,7 +897,6 @@ void F(int &f_tipo, int &f_tamanho) {
         f_tipo = const_tipo;
 
         if (reg.lexema == "TRUE" || reg.lexema == "FALSE") f_tipo = TIPO_BOOLEAN;
-
         if(const_tipo != TIPO_STRING) f_tamanho = 0;
         else f_tamanho = const_tamanho; 
         
