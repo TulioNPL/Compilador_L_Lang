@@ -938,11 +938,11 @@ void casaToken(int token_esperado) {
 	recebe o tipo, classe, valor e tamanho da variavel declarada
 	e converte sua declaracao para masm
 */
-void printDec(int tipo, int classe, string val, int tamanho){
+void printDec(int tipo, int classe, string val, int tamanho, bool ehNeg){
 
     if(classe == CLASSE_CONST){
         if(tipo == TIPO_INT) {
-            saida << "\tsword " << val << "\t;const. Int em "  << contadorDados << endl;
+            saida << "\tsword " << (ehNeg?"-":"") << val << "\t;const. Int em "  << contadorDados << endl;
             contadorDados += 2;
 
         } else if(tipo == TIPO_CHAR) {
@@ -975,7 +975,7 @@ void printDec(int tipo, int classe, string val, int tamanho){
             
         } else {
             if(tipo == TIPO_INT) {
-                saida << "\tsword " << (!val.compare("VAZIO")?"?":val) << " \t;var. Int em " << contadorDados << endl;
+                saida << "\tsword " << (ehNeg?"-":"") << (!val.compare("VAZIO")?"?":val) << " \t;var. Int em " << contadorDados << endl;
                 contadorDados += 2;
 
             } else if(tipo == TIPO_CHAR) {
@@ -1287,25 +1287,25 @@ void Exp(int &exp_tipo, int &exp_tamanho, int &exp_end) {
             fimCmp = novoRot();
             saida << "\tmov ax, 1" << endl; //ax recebe true
             saida << "\tmov cx, 0" << endl; //contador de posicao em 0
-            saida << "\tmov bx, DS:[" << exps1_end << "]" << endl; //carrega em bx o primeiro char da string 1
-            saida << "\tmov dx, DS:[" << exps2_end << "]" << endl; //carrega em dx o primeiro char da string 2
+            saida << "\tmov bl, DS:[" << exps1_end << "]" << endl; //carrega em bx o primeiro char da string 1
+            saida << "\tmov dl, DS:[" << exps2_end << "]" << endl; //carrega em dx o primeiro char da string 2
             saida << comecoCmp << ":" << endl; //loop de comparacao
-            saida << "\tcmp bx, dx" << endl; //compara dx e bx
-            saida << "\tje " << iguais << ":" << endl;
+            saida << "\tcmp bl, dl" << endl; //compara dx e bx
+            saida << "\tje " << iguais << endl;
             saida << "\tmov ax, 0" << endl; //se forem diferentes, ax recebe false e acaba o loop
             saida << "\tjmp " << fimCmp << endl;
             saida << iguais << ":" << endl; // se forem iguais carrega os proximos chars
-            saida << "\tcmp bx, '$'" << endl;
+            saida << "\tcmp bl, \'$\'" << endl;
             saida << "\tje " << fimCmp << endl;
-            saida << "\tcmp dx, '$'" << endl;
+            saida << "\tcmp dl, \'$\'" << endl;
             saida << "\tje " << fimCmp << endl;
             saida << "\tadd cx, 1" << endl; //incrementa a posicao
             saida << "\tmov bx, "  << exps2_end  << endl; //move o end pra bx
             saida << "\tadd bx, cx" << endl; // soma posicao
-            saida << "\tmov dx, DS:[bx]" << endl; // atualiza o char de dx
+            saida << "\tmov dl, DS:[bx]" << endl; // atualiza o char de dx
             saida << "\tmov bx, "  << exps1_end  << endl; //mov end pra bx
             saida << "\tadd bx, cx" << endl; //soma a posicao
-            saida << "\tmov bx, DS:[bx]" << endl; //atualiza o char de bx
+            saida << "\tmov bl, DS:[bx]" << endl; //atualiza o char de bx
             saida << "\tjmp " << comecoCmp << endl;
             saida << fimCmp << ":" << endl;
         } else {
@@ -1351,8 +1351,9 @@ void Dec() {
     // iniciando variaveis regra DEC
     int dec_tipo, dec_classe;
     int id_tipo, id_classe, id_pos, id_tamanho;
-    string id_lex;
     int const_tipo, const_tam; 
+    bool ehNeg = false; //flag que é ativada caso o valor seja negativo
+    string id_lex;
     string const_val = "VAZIO";
 
     if (reg.token == TOKEN_FINAL) {
@@ -1375,6 +1376,7 @@ void Dec() {
         casaToken(TOKEN_ID);
         casaToken(TOKEN_IGUAL);
         if (reg.token == TOKEN_MENOS) {
+            ehNeg=true;
             casaToken(TOKEN_MENOS);
             if(reg.tipo != TIPO_INT) throw ERR_TIPO;
         }
@@ -1388,7 +1390,7 @@ void Dec() {
         casaToken(TOKEN_PONTO_VIRG);
 
         t.atualizar(id_lex, id_tipo, id_tamanho, id_classe, contadorDados);
-        printDec(id_tipo, id_classe, const_val, const_tam);
+        printDec(id_tipo, id_classe, const_val, const_tam,ehNeg);
 
         
     } else {
@@ -1425,6 +1427,7 @@ void Dec() {
         if (reg.token == TOKEN_ATRIB) {
             casaToken(TOKEN_ATRIB);
             if (reg.token == TOKEN_MENOS) {
+                ehNeg = true;
                 casaToken(TOKEN_MENOS);
                 if(reg.tipo != TIPO_INT) throw ERR_TIPO;
             }
@@ -1458,7 +1461,7 @@ void Dec() {
         }
 
         t.atualizar(id_lex, id_tipo, id_tamanho, id_classe, contadorDados);
-        printDec(id_tipo, id_classe, const_val, id_tamanho);
+        printDec(id_tipo, id_classe, const_val, id_tamanho, ehNeg);
 
         while (reg.token == TOKEN_VIRG) {
             const_val = "VAZIO"; // resetando o buffer;
@@ -1482,6 +1485,7 @@ void Dec() {
             if (reg.token == TOKEN_ATRIB) {
                 casaToken(TOKEN_ATRIB);
                 if (reg.token == TOKEN_MENOS) {
+                    ehNeg = true;
                     casaToken(TOKEN_MENOS);
                     if(reg.tipo != TIPO_INT) throw ERR_TIPO;
                 }
@@ -1513,7 +1517,7 @@ void Dec() {
                 casaToken(TOKEN_FECHA_COLCH);
             }
             t.atualizar(id_lex, id_tipo, id_tamanho, id_classe, contadorDados);
-            printDec(id_tipo, id_classe, const_val, id_tamanho);
+            printDec(id_tipo, id_classe, const_val, id_tamanho, ehNeg);
         }
         casaToken(TOKEN_PONTO_VIRG);
     }    
@@ -1602,8 +1606,8 @@ void CmdAtr() {
             saida << "\tmov cx, " << exp2_tamanho - 1 << endl;
             saida << rotInicio << ":" << endl;
             saida << "\tcmp cx, 0" << endl;
-            saida << "\tmov ax, DS:[si]" << endl;
-            saida << "\tmov DS:[di], ax" << endl;
+            saida << "\tmov al, DS:[si]" << endl;
+            saida << "\tmov DS:[di], al" << endl;
             saida << "\tje " << rotFim << endl;
             saida << "\tadd si, 1" << endl;
             saida << "\tadd di, 1" << endl;

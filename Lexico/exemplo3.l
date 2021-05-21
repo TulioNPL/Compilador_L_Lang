@@ -1,12 +1,13 @@
-int a, b;
-char nome[10];
+int i;
+int r := -10;
+final d = -10;
+char a[10], b[10];
 main {
-    b:=15;
-
-    writeln("Escreva seu nome, Tulio.");
-    readln(nome);
-
-    for(a:=3, writeln("por que deus o que eu fiz pra merecer"); a<b; a:=a+2){
-        writeln(nome, " ", a);
+    writeln(r, " ", d);
+    for(i:=0;i<10;i:=i+1){
+        writeln("ninguem tem contato de ninguem?");
+        readln(b);
+        if(b = "nao") then writeln("ah me engana que eu gosto");
+        else if (b = "tem") then writeln("ok...");
     }
 }
