@@ -78,6 +78,7 @@ using namespace std;
 #define ERR_TAMANHO -7 //usado para erro de tamanho maior que o esperado
 #define ERR_CLASSE -8 // usado para erro de classe errada
 
+// definição da posição de inicio dos valores temporários
 #define POS_TEMPORARIOS 0
 
 
@@ -120,6 +121,7 @@ int contadorRot = 0;
 // iniciando variavel global para o arquivo de saida
 ofstream saida;
 
+// metodo para criar novos rótulos
 string novoRot(){
     return "R" + std::to_string(contadorRot++);
 }
@@ -726,6 +728,12 @@ void analisadorLexico() {
     }
 }
 
+/*
+--------------------------------------------------------------------
+Métodos para verificação de Tipos
+--------------------------------------------------------------------
+*/
+
 
 //Metodo para verificar a compatibilidade de tipos nas operacoes *, /, %, , +, -, =, >, <, >=, <=, <> OR e AND
 void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t_op) {
@@ -854,6 +862,7 @@ void verificaOps(int f1_tipo, int f2_tipo, int f1_tamanho, int f2_tamanho, int t
 
 
 //Verifica compatibilidade de tipos na declaracao
+// Ambos tipos devem ser iguais
 bool verificaCompatibDec(int id_tipo, int const_tipo){
     if((id_tipo == TIPO_INT && const_tipo == TIPO_INT) 
         || (id_tipo == TIPO_CHAR && const_tipo == TIPO_CHAR)
@@ -865,6 +874,7 @@ bool verificaCompatibDec(int id_tipo, int const_tipo){
 
 
 //Verifica a compatibilidade de tipos no comando ReadLn
+//Só pode ler Int escalar, ou string/vetor de char que são compativeis entre si
 bool verificaCompatibRead(int id_tipo, int id_tamanho) {
     if (id_tipo == TIPO_INT){
         if(id_tamanho == 0) return true;
@@ -891,7 +901,6 @@ bool verificaCompatibWrite(int exp_tipo, int exp_tamanho){
 bool verificaCompatibAtr(int id_tipo, int exp_tipo, int id_tamanho, int exp_tamanho){
     if(id_tipo == TIPO_INT){
         //confere se os inteiros manipulados sao escalares
-        // aqui demtro ten qui ver si eh vetor o nao
         if(exp_tipo == TIPO_INT && id_tamanho == 0 && exp_tamanho == 0) return true;
     } else if (id_tipo == TIPO_CHAR){
         if(id_tamanho > 0) { // se ID for vetor
@@ -995,6 +1004,7 @@ void printDec(int tipo, int classe, string val, int tamanho, bool ehNeg){
 Analisador Sintático
 Cada método a seguir representa um símbolo da gramática
 Os comentários representam o símbolo representado pelo método
+As funções do gerador de código estão incluidas
 ----------------------------------------------------
 */
 
@@ -1025,6 +1035,7 @@ void F(int &f_tipo, int &f_tamanho, int &f_end) {
         f_tamanho = f1_tamanho;
         f_tipo = f1_tipo; 
         f_end = novoTemp(f_tipo);
+        // printa o codigo resultante
         saida << "\tmov ax, DS:[" << dec << f1_end << "]" << endl;
         saida << "\tneg ax" << endl;
         saida << "\tadd ax, 1" << endl;
@@ -1043,7 +1054,8 @@ void F(int &f_tipo, int &f_tamanho, int &f_end) {
         const_tamanho = reg.tamanho;
         f_tipo = const_tipo;
 
-        if (reg.lexema == "TRUE") {
+        // gera constantes 1 e 0 para True e False
+        if (reg.lexema == "TRUE") { 
             f_tipo = TIPO_BOOLEAN;
             reg.lexema = "1";
         } else if(reg.lexema == "FALSE"){
@@ -1051,13 +1063,14 @@ void F(int &f_tipo, int &f_tamanho, int &f_end) {
             f_tipo = TIPO_BOOLEAN;
         } 
             
+        // Se não for string pega o lexema direto
         if(const_tipo != TIPO_STRING){
             f_tamanho = 0;
             f_end = novoTemp(f_tipo);
             saida << "\tmov ax, " << reg.lexema << endl;
             saida << "\tmov DS:[" << dec << f_end << "], ax" << endl;
         } 
-        else { //Const eh string
+        else { // Se for string adiciona no segmento de dados
             f_tamanho = const_tamanho; 
             int tamanho_string = f_tamanho - 2 + 1; // -2 das aspas, +1 do $
             saida << "dseg SEGMENT PUBLIC" << endl;
@@ -1094,6 +1107,7 @@ void F(int &f_tipo, int &f_tamanho, int &f_end) {
             }
             f_tamanho = exp_tamanho;
             f_end = novoTemp(f_tipo);
+            // código para acessar elemento do vetor
             saida << "\tmov bx, DS:[" << exp_end<< "]" << endl;
             if(f_tipo == TIPO_INT) 
                 saida << "\tadd bx, DS:[" << exp_end << "]" << endl;
@@ -1117,12 +1131,14 @@ void T(int &t_tipo, int &t_tamanho, int &t_end) {
     int t_op;
     int f1_tipo, f1_tamanho, f1_end, f2_tipo, f2_tamanho, f2_end;
 
+    // chama F
     F(f1_tipo, f1_tamanho,f1_end);
    
     t_tipo = f1_tipo;
     t_tamanho = f1_tamanho;
     t_end = f1_end;
 
+    // salva operador para verificação de tipos
     while (reg.token == TOKEN_ASTER || reg.token == TOKEN_BARRA ||
            reg.token == TOKEN_MOD || reg.token == TOKEN_AND) {
         if (reg.token == TOKEN_ASTER) {
@@ -1139,9 +1155,12 @@ void T(int &t_tipo, int &t_tamanho, int &t_end) {
             t_tipo = TIPO_BOOLEAN;
             casaToken(TOKEN_AND);
         }
+
+        // chama F
         F(f2_tipo, f2_tamanho, f2_end);
         verificaOps(f1_tipo, f2_tipo, f1_tamanho, f2_tamanho, t_op);
         
+        // imprime o codigo resultante dependendo do operador
         saida << "\tmov ax, DS:[" << t_end << "]" << endl;
         saida << "\tmov bx, DS:[" << f2_end<< "]" << endl;
         if (t_op == TOKEN_ASTER) saida << "\timul bx" << endl;
@@ -1175,6 +1194,7 @@ void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
     bool neg = false;
     bool sinal = false;
 
+    // verifique a existencia de sinal
     if (reg.token == TOKEN_MAIS) {
         sinal = true;
         casaToken(TOKEN_MAIS);
@@ -1184,21 +1204,25 @@ void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
         casaToken(TOKEN_MENOS);
     }
 
+    // chama T
     T(t1_tipo, t1_tamanho, t1_end);
     exps_tipo = t1_tipo;
     exps_tamanho = t1_tamanho;
     exps_end = t1_end;
 
+    // verifica se há sinal e verifica o tipo
     if(sinal){
         if(exps_tipo != TIPO_INT) throw ERR_TIPO;
     }
 
+    // Nega o valor caso haja sinal negativo
     if(neg) {
         saida << "\tmov ax,DS:[" << exps_end << "]" << endl;
         saida << "\tneg ax" << endl;
         saida << "\tmov DS:[" << exps_end << "], ax" << endl;
     }
 
+    // salva operador para verificação de tipos
     while (reg.token == TOKEN_MAIS || reg.token == TOKEN_MENOS ||
            reg.token == TOKEN_OR) {
         if (reg.token == TOKEN_MAIS) {
@@ -1212,9 +1236,12 @@ void ExpS(int &exps_tipo, int &exps_tamanho, int &exps_end) {
             exps_tipo = TIPO_BOOLEAN;
             casaToken(TOKEN_OR);
         }
+
+        // chama T
         T(t2_tipo, t2_tamanho, t2_end);
         verificaOps(t1_tipo, t2_tipo, t1_tamanho, t2_tamanho, exps_op);
 
+        // imprime codigo resultante baseado no oprador
         saida << "\tmov ax, DS:[" << exps_end << "]" << endl;
         saida << "\tmov bx, DS:[" << t2_end << "]" << endl;
         if(exps_op == TOKEN_MAIS) saida << "\tadd ax, bx" << endl;
@@ -1249,6 +1276,7 @@ void Exp(int &exp_tipo, int &exp_tamanho, int &exp_end) {
     exp_tamanho = exps1_tamanho;
     exp_end = exps1_end;
 
+    // guarda operador para verificação de tipos
     if (reg.token == TOKEN_IGUAL || reg.token == TOKEN_MAIOR ||
         reg.token == TOKEN_MENOR || reg.token == TOKEN_DIF ||
         reg.token == TOKEN_MENOR_IGUAL || reg.token == TOKEN_MAIOR_IGUAL) {
@@ -1280,7 +1308,7 @@ void Exp(int &exp_tipo, int &exp_tamanho, int &exp_end) {
 
         if((exps1_tipo == TIPO_STRING || (exps1_tipo == TIPO_CHAR && exps1_tamanho > 0)) &&
            (exps2_tipo == TIPO_STRING || (exps2_tipo == TIPO_CHAR && exps1_tamanho > 0))) {
-            
+            // método para comparação de string
             string comecoCmp, iguais, fimCmp;
             comecoCmp = novoRot();
             iguais = novoRot();
@@ -1309,6 +1337,7 @@ void Exp(int &exp_tipo, int &exp_tamanho, int &exp_end) {
             saida << "\tjmp " << comecoCmp << endl;
             saida << fimCmp << ":" << endl;
         } else {
+            // compara os demais tipos e gera seus codigos
             saida << "\tmov ax, DS:[" <<  exps1_end<< "]" << endl;
             saida << "\tmov bx, DS:[" <<  exps2_end<< "]" << endl;
             saida << "\tcmp ax, bx" << endl;
@@ -1570,7 +1599,7 @@ void CmdAtr() {
 
     if(id_classe == CLASSE_CONST) {
         throw ERR_CLASSE;
-    }
+    } // verifica a classe pois nao pode atribuir a valores constantes
     
     saida << "\tmov si, " << id_end << endl;
     casaToken(TOKEN_ID);
@@ -1599,14 +1628,15 @@ void CmdAtr() {
     
     if(id_tipo == TIPO_CHAR && id_tamanho > 0) { // vetor de char
         if(exp2_tipo == TIPO_STRING || (exp2_tipo == TIPO_CHAR && exp2_tamanho > 0)){ // se exp2 for string ou vetor de char
+            // código para inserção de string em vetor de char
             string rotInicio = novoRot();
             string rotFim = novoRot();
-            saida << "\tmov di, " << id_end << endl; //
+            saida << "\tmov di, " << id_end << endl; // move endereços para vetores
             saida << "\tmov si, " << exp2_end << endl;
-            saida << "\tmov cx, " << exp2_tamanho - 1 << endl;
+            saida << "\tmov cx, " << exp2_tamanho - 1 << endl; // inicia um contador com o tamanho da string
             saida << rotInicio << ":" << endl;
-            saida << "\tcmp cx, 0" << endl;
-            saida << "\tmov al, DS:[si]" << endl;
+            saida << "\tcmp cx, 0" << endl; // ve se o contador já passou por todos caracteres
+            saida << "\tmov al, DS:[si]" << endl; // se nao, adiciona caractere a caractere na string
             saida << "\tmov DS:[di], al" << endl;
             saida << "\tje " << rotFim << endl;
             saida << "\tadd si, 1" << endl;
@@ -1647,7 +1677,10 @@ void CmdRep() {
     }
 
     casaToken(TOKEN_PONTO_VIRG);
+
+    // criando rotulo para Exp
     rotInicio = novoRot();
+
     saida << rotInicio << ":" << endl;
     Exp(exp_tipo, exp_tamanho, exp_end);
     
@@ -1655,7 +1688,7 @@ void CmdRep() {
 
     if(exp_tipo != TIPO_BOOLEAN || exp_tamanho > 0) throw ERR_TIPO;
     
-    
+    // criando rotulos
     rotFim = novoRot();
     rotComandes = novoRot();
     rotComandos = novoRot();
@@ -1663,8 +1696,8 @@ void CmdRep() {
     
     saida << "\tmov dx, ds:[" << exp_end << "]" << endl; //carregar conteúdo de Exp.end em dx
     saida << "\tcmp dx, 0" << endl;
-    saida << "\tje " << rotFim << endl;
-    saida << "\tjmp " << rotComandos << endl;
+    saida << "\tje " << rotFim << endl; // se EXP for FALSE pula pro final
+    saida << "\tjmp " << rotComandos << endl; // senao, pula para os comandos
     saida << rotComandes << ":" << endl;
 
     casaToken(TOKEN_PONTO_VIRG);
@@ -1682,6 +1715,7 @@ void CmdRep() {
         }
     }
 
+    // pula para inicio após executar o passo
     saida << "\tjmp " << rotInicio << endl;
     saida << rotComandos << ":" << endl;
     
@@ -1695,7 +1729,7 @@ void CmdRep() {
         BlocoCmd();
     }
 
-    saida << "\tjmp " << rotComandes << endl;
+    saida << "\tjmp " << rotComandes << endl; // pula para os comandos do passo
     saida << rotFim << ":" << endl;
 }
 
@@ -1714,9 +1748,10 @@ void CmdIf() {
     Exp(exp_tipo, exp_tamanho, exp_end);
     contadorTemp = POS_TEMPORARIOS;
 
+    // verifica a expressão
     saida << "\tmov DX, ds:["<<exp_end<<"]" << endl;
     saida << "\tcmp DX, 0" << endl;
-    saida << "\tje " << RotFalso << endl;
+    saida << "\tje " << RotFalso << endl; // salta para o fim se for falso
 
     if(exp_tipo != TIPO_BOOLEAN || exp_tamanho > 0) throw ERR_TIPO;
 
@@ -1732,8 +1767,8 @@ void CmdIf() {
         BlocoCmd();
     }
 
-    saida << "jmp " << RotFim << endl;
-    saida << RotFalso << ":" << endl;
+    saida << "jmp " << RotFim << endl; // pula para o fim se executou o TRUE
+    saida << RotFalso << ":" << endl; // executa o else (caso exista)
     
     if (reg.token == TOKEN_ELSE) {
         casaToken(TOKEN_ELSE);
@@ -1750,8 +1785,8 @@ void CmdIf() {
 }
 
 
-// CmdNull -> ;
-void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
+// // CmdNull -> ;
+// void CmdNull() { casaToken(TOKEN_PONTO_VIRG); }
 
 
 // CmdRead -> readln "(" ID (2) ["[" Exp (3) "]"] (1) ")"
@@ -1772,7 +1807,7 @@ void CmdRead() {
     else if(id_classe == CLASSE_CONST) throw ERR_CLASSE;
 
     casaToken(TOKEN_ID);
-    saida << "\tmov si, " << id_end << endl;
+    saida << "\tmov si, " << id_end << endl; // codigo para pegar a posição a ser lida
 
     if (reg.token == TOKEN_ABRE_COLCH) {
         casaToken(TOKEN_ABRE_COLCH);
@@ -1808,7 +1843,7 @@ void CmdRead() {
     saida << "\tmov ah, 0Ah" << endl;
     saida << "\tint 21h" << endl;
 
-    if(id_tipo == TIPO_INT){
+    if(id_tipo == TIPO_INT){ // caso seja int, le como string e faz multiplicações sucessivas para tornar em inteiro
         string R0, R1, R2;
         R0 = novoRot();
         R1 = novoRot();
@@ -1843,7 +1878,7 @@ void CmdRead() {
         saida << "\timul cx ;mult. sinal" << endl;
         saida << "\tmov ds:[si], ax ;move pro id o valor acumulado" << endl;
     } else {
-        //pega string
+        // caso seja string, le caractere a caractere trocando o ultimo por "$"
         string inicio, fim;
         inicio = novoRot();
         fim = novoRot();
@@ -1877,7 +1912,7 @@ void printWrite(int tipo, int tamanho, int end) {
 
     if (tipo != TIPO_INT && tipo != TIPO_CHAR && tipo != TIPO_STRING) throw  ERR_TIPO;
     else {
-        if(tipo == TIPO_INT) {
+        if(tipo == TIPO_INT) { // se for int, faz divisões sucessivas para transformar em string
             R0 = novoRot();
             R1 = novoRot();
             R2 = novoRot();
@@ -1950,6 +1985,8 @@ void CmdWrite() {
     if(!verificaCompatibWrite(exp_tipo, exp_tamanho)){
         throw ERR_TIPO;
     }
+
+    // chama metodo de printar string
     printWrite(exp_tipo, exp_tamanho, exp_end);
 
     while (reg.token == TOKEN_VIRG) {
@@ -1959,6 +1996,8 @@ void CmdWrite() {
         if(!verificaCompatibWrite(exp1_tipo, exp1_tamanho)){
             throw ERR_TIPO;
         }   
+
+        // chama metodo de printar string
         printWrite(exp1_tipo, exp1_tamanho, exp1_end);
     }
     casaToken(TOKEN_FECHA_PAREN);

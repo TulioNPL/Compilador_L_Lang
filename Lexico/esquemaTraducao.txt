@@ -444,7 +444,7 @@ CmdIf -> if(1)"(" Exp (2) ")" then (Cmd | BlocoCmd) (3) [else (Cmd | BlocoCmd)] 
 }
 _______________________________________________________________________________________________________________________________________________________________________________________________________
 
-CmdRep -> for"(" [CmdFor {, CmdFor}]; Exp (1); (2)[CmdFor {, CmdFor}] ")" (3)(Cmd | BlocoCmd)
+CmdRep -> for"(" [CmdFor {, CmdFor}]; (1) Exp ; (2)[CmdFor {, CmdFor}] ")" (3)(Cmd | BlocoCmd)
 rotExp:
 EXP()
 ///////
